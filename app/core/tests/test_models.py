@@ -1,6 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 
+from core import models
+
 
 class ModelTests(TestCase):
     def test_create_user_with_email_successful(self):
@@ -32,3 +34,12 @@ class ModelTests(TestCase):
 
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
+
+    def test_product_str(self):
+        """Test __str__ method for model Product"""
+        new_product = models.Product.objects.create(
+            name='test product',
+            description='test product for testing string repsresentation'
+        )
+
+        self.assertEqual(str(new_product), "'{}': {}".format(new_product.name, new_product.description))
