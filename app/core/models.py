@@ -29,8 +29,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Custom user model, that supports using email instead of username"""
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
-    register_date = models.DateField(default=timezone.now)
     sex = models.CharField(max_length=1, default='M')
+
+    is_oauth = models.BooleanField(default=False)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
