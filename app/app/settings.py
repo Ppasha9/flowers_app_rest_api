@@ -20,10 +20,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '!hm*5!2#$71+$yvvte3=249h_$czs5m%-ppl&dnwehp&$y5&g2'
+SECRET_KEY = os.environ['DJANGO_SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ['DJANGO_IS_DEBUG']
 
 ALLOWED_HOSTS = []
 
@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+
+    'django_extensions',
 
     # Social auth applications
     'oauth2_provider',
@@ -102,8 +104,8 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Google Authentication configuration
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '112191486341-uuqkfpogfq22dukknc7ioquc6ojst5iq.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'IC49KZ_CUYfhWkS0N6wQnF5J'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.environ['GOOGLE_APP_KEY']
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.environ['GOOGLE_APP_SECRET']
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
     'https://www.googleapis.com/auth/userinfo.email',
@@ -116,20 +118,13 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-### TEMPORARY, HACK!!!!
-host = 'localhost'
-name = 'flowers_shop_test'
-user = 'postgres'
-password = '30CgsgForever'
-###
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': host,
-        'NAME': name,
-        'USER': user,
-        'PASSWORD': password,
+        'HOST': os.environ['DB_HOST'],
+        'NAME': os.environ['DB_NAME'],
+        'USER': os.environ['DB_USER'],
+        'PASSWORD': os.environ['DB_PASS'],
     }
 }
 
