@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
@@ -10,6 +11,8 @@ class UserManager(BaseUserManager):
 
         user = self.model(email=self.normalize_email(email), **extra_fields)
         user.set_password(password)
+        user.is_oauth = False
+        user.is_active = True
         user.save(using=self._db)
 
         return user
@@ -28,6 +31,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     """Custom user model, that supports using email instead of username"""
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
+    sex = models.CharField(max_length=1, default='M')
+
+    is_oauth = models.BooleanField(default=False)
+
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
@@ -38,8 +45,21 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Product(models.Model):
     """Product model"""
-    name = models.CharField(max_length=100)
-    description = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    price = models.FloatField(default=0.0)
+    add_date = models.DateField(default=timezone.now)
 
     def __str__(self):
-        return "'{}': {}".format(self.name, self.description)
+        return f"'{self.name}': {self.description}"
+
+
+class Cart(models.Model):
+    """Cart model"""
+    date = models.DateField(default=timezone.now)
+    full_price = models.FloatField(default=0.0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    products = models.ManyToManyField(Product)
+
+    def __str__(self):
+        return f"Cart for user {self.user.name}, full price is {self.full_price}"
