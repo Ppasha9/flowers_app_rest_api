@@ -49,6 +49,7 @@ class Product(models.Model):
     description = models.TextField()
     price = models.FloatField(default=0.0)
     add_date = models.DateField(default=timezone.now)
+    image = models.ImageField(upload_to="product_images", blank=False)
 
     def __str__(self):
         return f"'{self.name}': {self.description}"
