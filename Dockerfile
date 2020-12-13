@@ -3,6 +3,8 @@ MAINTAINER Pavel Denisov
 
 ENV PYTHONUNBUFFERED 1
 
+EXPOSE 8000
+
 COPY ./requirements.txt /requirements.txt
 RUN apk add --update --no-cache postgresql-client
 RUN apk add --update --no-cache --virtual \
