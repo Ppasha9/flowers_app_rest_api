@@ -49,6 +49,7 @@ object Constants {
     // Categories codes
     const val CATEGORY_NEW_CODE = "New"
     const val CATEGORY_BOUQUET_CODE = "Bouquet"
+    const val CATEGORY_BASKET_CODE = "Basket"
 
     // Cart's status codes
     const val CART_STATUS_DEFAULT = "Default"
