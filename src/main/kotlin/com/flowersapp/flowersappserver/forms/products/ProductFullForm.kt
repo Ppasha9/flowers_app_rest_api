@@ -8,5 +8,6 @@ data class ProductFullForm(
     var description: String,
     var price: Double,
     var addDate: OffsetDateTime,
-    var categories: ArrayList<String>
+    var categories: ArrayList<String>,
+    var tags: ArrayList<String>
 )

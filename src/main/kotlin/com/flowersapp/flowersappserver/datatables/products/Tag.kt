@@ -9,20 +9,19 @@ import javax.persistence.Table
 import javax.validation.constraints.NotEmpty
 
 @Entity
-@Table(name = "categories")
-data class Category(
+@Table(name = "tags")
+data class Tag(
     @Id
-    @NotEmpty(message = "Please provide Category code: `new`, `bouquet` and etc")
+    @NotEmpty(message = "Please provide Tag code: `pink`, `red` and etc")
     @Column(unique = true, length = Constants.STRING_LENGTH_LONG)
     var code: String = "",
 
-    @NotEmpty(message = "Please provide current Category description.")
     @Column(columnDefinition = "TEXT")
     var description: String = ""
 )
 
-interface CategoryRepository: JpaRepository<Category, String> {
+interface TagRepository: JpaRepository<Tag, String> {
     fun existsByCode(code: String): Boolean
 
-    fun findByCode(code: String): Category?
+    fun findByCode(code: String): Tag?
 }

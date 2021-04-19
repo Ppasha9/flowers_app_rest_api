@@ -19,6 +19,10 @@ data class MeUserForm(
     @field:NotBlank
     var name: String = "",
 
+    @field:Size(min = Constants.NAME_MIN_LENGTH, max = Constants.NAME_MAX_LENGTH)
+    @field:NotBlank
+    var surname: String = "",
+
     @field:NotBlank
     var phone: String = "",
 

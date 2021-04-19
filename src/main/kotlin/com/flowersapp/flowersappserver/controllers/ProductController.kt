@@ -196,7 +196,7 @@ class ProductController {
     }
 
     @GetMapping("/max-price")
-    fun getMaxProductsMaxPriceByTag(
+    fun getProductsMaxPriceByCategory(
         @RequestParam(name = "category", required = true) category: String
     ): ResponseEntity<Any> {
         logger.debug("Getting max price for products by category=$category")

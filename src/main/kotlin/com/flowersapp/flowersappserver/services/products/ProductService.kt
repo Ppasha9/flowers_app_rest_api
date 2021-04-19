@@ -2,7 +2,6 @@ package com.flowersapp.flowersappserver.services.products
 
 import com.flowersapp.flowersappserver.datatables.products.*
 import com.flowersapp.flowersappserver.forms.products.*
-import com.sun.org.apache.xpath.internal.operations.Bool
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,7 +17,11 @@ class ProductService {
     @Autowired
     private lateinit var productToCategoryRepository: ProductToCategoryRepository
     @Autowired
+    private lateinit var productToTagRepository: ProductToTagRepository
+    @Autowired
     private lateinit var categoryRepository: CategoryRepository
+    @Autowired
+    private lateinit var tagRepository: TagRepository
 
     @Transactional
     fun findById(id: Long): Optional<Product> = productRepository.findById(id)
@@ -66,11 +69,16 @@ class ProductService {
             description = product.description,
             price = product.price,
             addDate = date,
-            categories = arrayListOf()
+            categories = arrayListOf(),
+            tags = arrayListOf()
         )
 
         productToCategoryRepository.findByProductId(productId = product.id!!).forEach {
             res.categories.add(it.category.code)
+        }
+
+        productToTagRepository.findByProductId(productId = product.id!!).forEach {
+            res.tags.add(it.tag.code)
         }
 
         return res
@@ -101,6 +109,17 @@ class ProductService {
             ))
         }
 
+        productForm.tags?.forEach {
+            if (!tagRepository.existsByCode(it)) {
+                return "Tag $it doesn't exist"
+            }
+
+            productToTagRepository.save(ProductToTag(
+                    product = product,
+                    tag = tagRepository.findByCode(it)!!
+            ))
+        }
+
         return null
     }
 
@@ -121,8 +140,8 @@ class ProductService {
         product.description = productForm.description
         productRepository.save(product)
 
-        val currTags = productToCategoryRepository.findByProductId(productId)
-        currTags.forEach {
+        val currCategories = productToCategoryRepository.findByProductId(productId)
+        currCategories.forEach {
             if (!productForm.categories?.contains(it.category.code)!!) {
                 productToCategoryRepository.delete(it)
             }
@@ -137,6 +156,26 @@ class ProductService {
                 productToCategoryRepository.save(ProductToCategory(
                     product = product,
                     category = categoryRepository.findByCode(it)!!
+                ))
+            }
+        }
+
+        val currTags = productToTagRepository.findByProductId(productId)
+        currTags.forEach {
+            if (!productForm.tags?.contains(it.tag.code)!!) {
+                productToTagRepository.delete(it)
+            }
+        }
+
+        productForm.tags?.forEach {
+            if (!tagRepository.existsByCode(it)) {
+                return "Tag $it doesn't exist"
+            }
+
+            if (!productToTagRepository.existsByTagCodeAndProductId(it, productId)) {
+                productToTagRepository.save(ProductToTag(
+                    product = product,
+                    tag = tagRepository.findByCode(it)!!
                 ))
             }
         }

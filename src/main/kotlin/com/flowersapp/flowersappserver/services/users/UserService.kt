@@ -48,13 +48,14 @@ class UserService {
             return "Failed to execute sign up. There is already a user with email ${signUpUserForm.email}"
 
         val userType = userTypeRepository.findByCode(Constants.DEFAULT_USER_TYPE_CODE)
-        val password = signUpUserForm.password ?: generateRandPassword()
+        val password = signUpUserForm.password
         val encodedPassword = passwordEncoder.encode(password)
 
         val user = User(
             userType = userType!!,
             email = signUpUserForm.email,
             name = signUpUserForm.name,
+            surname = signUpUserForm.surname,
             phone = signUpUserForm.phone,
             password = encodedPassword)
         userRepository.saveAndFlush(user)
@@ -74,6 +75,7 @@ class UserService {
 
         authorizedUser.email = if (!editForm.email.isBlank()) editForm.email else authorizedUser.email
         authorizedUser.name = if (!editForm.name.isBlank()) editForm.name else authorizedUser.name
+        authorizedUser.surname = if (!editForm.surname.isBlank()) editForm.surname else authorizedUser.surname
         authorizedUser.phone = if (!editForm.phone.isBlank()) editForm.phone else authorizedUser.phone
         authorizedUser.password = if (!editForm.password.isBlank()) passwordEncoder.encode(editForm.password) else authorizedUser.password
 
@@ -99,6 +101,7 @@ class UserService {
             dbUser = existedUser
             dbUser.email = if (user.email.isNotBlank() && dbUser.email.isBlank()) user.email else dbUser.email
             dbUser.name = if (user.name.isNotBlank()) user.name else dbUser.name
+            dbUser.surname = if (user.surname.isNotBlank()) user.surname else dbUser.surname
             dbUser.phone = if (user.phone.isNotBlank()) user.phone else dbUser.phone
         }
 
@@ -119,6 +122,7 @@ class UserService {
             code = user.code,
             email = user.email,
             name = user.name,
+            surname = user.surname,
             phone = user.phone,
             password = user.password
         )

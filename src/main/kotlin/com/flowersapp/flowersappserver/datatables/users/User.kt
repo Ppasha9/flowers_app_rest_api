@@ -11,7 +11,7 @@ import javax.validation.constraints.NotEmpty
 @Table(name = "users")
 data class User(
     @Id
-    @Column(unique = true, length = Constants.STRING_LENGTH_MIDDLE)
+    @Column(unique = true, length = Constants.STRING_LENGTH_LONG)
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     var code: String = "",
@@ -24,6 +24,9 @@ data class User(
     @NotEmpty(message = "Please provide user's name")
     var name: String = "",
 
+    @NotEmpty(message = "Please provide user's surname")
+    var surname: String = "",
+
     @Email
     @NotEmpty(message = "Please provide user's email")
     var email: String = "",
@@ -32,7 +35,7 @@ data class User(
 
     var phone: String = "",
 
-    @Column(name = "external_code", length = Constants.STRING_LENGTH_MIDDLE)
+    @Column(name = "external_code")
     var externalCode: String = "",
 
     var isOAuth: Boolean = false
@@ -44,7 +47,7 @@ fun User.toHashMap(): HashMap<String, Any> {
     res["userType"] = userType.toString()
     res["email"] = email
     res["name"] = name
-    res["phone"] = phone.toString()
+    res["phone"] = phone
     res["isOAuth"] = isOAuth.toString()
 
     return res
