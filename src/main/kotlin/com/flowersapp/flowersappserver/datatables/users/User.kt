@@ -33,6 +33,8 @@ data class User(
 
     var password: String = "",
 
+    @Column(unique = true)
+    @NotEmpty(message = "Please provide user's phone")
     var phone: String = "",
 
     @Column(name = "external_code")
@@ -47,6 +49,7 @@ fun User.toHashMap(): HashMap<String, Any> {
     res["userType"] = userType.toString()
     res["email"] = email
     res["name"] = name
+    res["surname"] = surname
     res["phone"] = phone
     res["isOAuth"] = isOAuth.toString()
 
@@ -59,4 +62,5 @@ interface UserRepository : JpaRepository<User, String> {
 
     fun findByCode(code: String): User?
     fun findByEmail(email: String): User?
+    fun findByPhone(phone: String): User?
 }

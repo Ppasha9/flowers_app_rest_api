@@ -43,24 +43,24 @@ class AuthController {
 
     @RequestMapping("/signin", method = [RequestMethod.GET, RequestMethod.POST])
     fun singIn(
-        @RequestParam(name = "email", required = false, defaultValue = "") email: String,
+        @RequestParam(name = "email", required = false, defaultValue = "") emailOrPhone: String,
         @RequestParam(name = "password", required = false, defaultValue = "") password: String,
         @Valid @RequestBody loginRequest: LoginUserForm?
     ): ResponseEntity<Any> {
         var rPass = password
-        var rLogin = email
+        var rLogin = emailOrPhone
         if (loginRequest != null) {
             rPass = loginRequest.password
             rLogin = loginRequest.email
         }
 
-        logger.debug("Sign In. Email: {}. Password: {}",
+        logger.debug("Sign In. EmailOrPhone: {}. Password: {}",
             rLogin,
             passwordEncoder.encode(rPass))
 
-        val user = userService.findByEmail(rLogin)
+        val user = userService.findByEmailOrPhone(rLogin)
         if (user == null) {
-            logger.debug("Sign in failed. No such user by email: {}", rLogin)
+            logger.debug("Sign in failed. No such user by email or phone: {}", rLogin)
             return ResponseEntity("Fail. No such user.", HttpStatus.BAD_REQUEST)
         }
 

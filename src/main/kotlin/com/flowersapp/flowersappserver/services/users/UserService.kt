@@ -1,11 +1,11 @@
 package com.flowersapp.flowersappserver.services.users
 
 import com.flowersapp.flowersappserver.constants.Constants
-import com.flowersapp.flowersappserver.datatables.users.User
-import com.flowersapp.flowersappserver.datatables.users.UserRepository
-import com.flowersapp.flowersappserver.datatables.users.UserTypeRepository
+import com.flowersapp.flowersappserver.datatables.users.*
 import com.flowersapp.flowersappserver.forms.authorization.MeUserForm
 import com.flowersapp.flowersappserver.forms.authorization.SignUpUserForm
+import com.flowersapp.flowersappserver.forms.delivery_address.DeliveryAddressForm
+import com.flowersapp.flowersappserver.forms.delivery_address.DeliveryAddressGetForm
 import com.flowersapp.flowersappserver.services.carts.CartService
 import com.flowersapp.flowersappserver.utils.generateRandStr
 import org.slf4j.Logger
@@ -26,12 +26,17 @@ class UserService {
     private lateinit var userTypeRepository: UserTypeRepository
     @Autowired
     private lateinit var cartService: CartService
+    @Autowired
+    private lateinit var userToDeliveryAddressRepository: UserToDeliveryAddressRepository
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
 
     @Transactional
     fun findByEmail(email: String): User? = userRepository.findByEmail(email)
+
+    @Transactional
+    fun findByEmailOrPhone(emailOrPhone: String): User? = userRepository.findByEmail(emailOrPhone) ?: userRepository.findByPhone(emailOrPhone)
 
     fun save(user: User) = userRepository.save(user)
 
@@ -126,6 +131,75 @@ class UserService {
             phone = user.phone,
             password = user.password
         )
+    }
+
+    @Transactional
+    fun addDeliveryAddress(form: DeliveryAddressForm, user: User): String? {
+        if (userToDeliveryAddressRepository.existsByUserCodeAndAddressName(user.code, form.name)) {
+            return "Address with name ${form.name} already exists for user with code ${user.code}"
+        }
+
+        userToDeliveryAddressRepository.saveAndFlush(
+            UserToDeliveryAddress(
+                userCode = user.code,
+                addressName = form.name,
+                houseAddress = form.houseAddress,
+                flatNum = form.flatNum,
+                entranceNum = form.entranceNum,
+                floorNum = form.floorNum,
+                comment = form.comment ?: ""
+            )
+        )
+
+        return null
+    }
+
+    @Transactional
+    fun editDeliveryAddress(form: DeliveryAddressForm, user: User): String? {
+        if (!userToDeliveryAddressRepository.existsByUserCodeAndAddressName(user.code, form.name)) {
+            return "Address with name ${form.name} doesn't exists for user with code ${user.code}"
+        }
+
+        val objToEdit = userToDeliveryAddressRepository.findByUserCodeAndAddressName(user.code, form.name)!!
+        objToEdit.addressName = if (form.name == "") objToEdit.addressName else form.name
+        objToEdit.houseAddress = if (form.houseAddress == "") objToEdit.houseAddress else form.houseAddress
+        objToEdit.flatNum = if (form.flatNum == 0) objToEdit.flatNum else form.flatNum
+        objToEdit.entranceNum = if (form.entranceNum == 0) objToEdit.entranceNum else form.entranceNum
+        objToEdit.floorNum = if (form.floorNum == 0) objToEdit.floorNum else form.floorNum
+        objToEdit.comment = if (form.comment.isNullOrBlank()) objToEdit.comment else form.comment
+
+        userToDeliveryAddressRepository.saveAndFlush(objToEdit)
+
+        return null
+    }
+
+    @Transactional
+    fun deleteDeliveryAddress(addressName: String, user: User) {
+        if (!userToDeliveryAddressRepository.existsByUserCodeAndAddressName(user.code, addressName)) {
+            return
+        }
+
+        userToDeliveryAddressRepository.delete(userToDeliveryAddressRepository.findByUserCodeAndAddressName(user.code, addressName)!!)
+    }
+
+    @Transactional
+    fun getAllDeliveryAddressesForms(user: User): DeliveryAddressGetForm {
+        val res = DeliveryAddressGetForm(
+            addresses = arrayListOf()
+        )
+
+        userToDeliveryAddressRepository.findByUserCode(user.code).forEach {
+            res.addresses.add(DeliveryAddressForm(
+                name = it.addressName,
+                houseAddress = it.houseAddress,
+                flatNum = it.flatNum,
+                floorNum = it.floorNum,
+                entranceNum = it.entranceNum,
+                comment = it.comment ?: ""
+            ))
+        }
+
+        return res
     }
 
     companion object {

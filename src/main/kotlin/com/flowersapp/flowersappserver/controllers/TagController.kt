@@ -27,7 +27,10 @@ class TagController {
             return ResponseEntity("Tags not found", HttpStatus.NOT_FOUND)
         }
 
-        return ResponseEntity.ok(tags)
+        val res = arrayListOf<String>()
+        tags.forEach { res.add(it.code) }
+
+        return ResponseEntity.ok(res)
     }
 
     companion object {

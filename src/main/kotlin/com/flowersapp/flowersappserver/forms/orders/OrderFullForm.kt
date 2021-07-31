@@ -11,6 +11,7 @@ data class OrderFullForm(
     val fullPrice: Double,
     val status: String,
     val receiverName: String,
+    val receiverSurname: String,
     val receiverPhone: String,
     val receiverEmail: String,
     val receiverStreet: String,

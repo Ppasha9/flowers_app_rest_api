@@ -26,6 +26,9 @@ data class Order(
     @Column(name = "receiver_name")
     var receiverName: String = "",
 
+    @Column(name = "receiver_surname")
+    var receiverSurname: String = "",
+
     @Column(name = "receiver_phone")
     var receiverPhone: String = "",
 

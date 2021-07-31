@@ -40,8 +40,8 @@ public enum class PaymentMethod {
 data class CartFormationInfo(
     @Id
     @Column(unique = true)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "carts_gen")
-    @SequenceGenerator(name = "carts_gen", sequenceName = "carts_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "carts_formation_info_gen")
+    @SequenceGenerator(name = "carts_formation_info_gen", sequenceName = "carts_formation_info_seq")
     var id: Long? = null,
 
     @Column(name = "cart_id")
@@ -49,6 +49,9 @@ data class CartFormationInfo(
 
     @Column(name = "receiver_name")
     var receiverName: String = "",
+
+    @Column(name = "receiver_surname")
+    var receiverSurname: String = "",
 
     @Column(name = "receiver_phone")
     var receiverPhone: String = "",

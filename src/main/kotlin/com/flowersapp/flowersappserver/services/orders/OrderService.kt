@@ -49,7 +49,8 @@ class OrderService {
             receiverHouseNum = cartFormationInfo.receiverHouseNum,
             receiverEmail = cartFormationInfo.receiverEmail,
             receiverApartmentNum = cartFormationInfo.receiverApartmentNum,
-            receiverName = cartFormationInfo.receiverName
+            receiverName = cartFormationInfo.receiverName,
+            receiverSurname = cartFormationInfo.receiverSurname
         )
 
         orderRepository.saveAndFlush(order)
@@ -102,6 +103,7 @@ class OrderService {
             fullPrice = if (order.deliveryMethod == DeliveryMethod.PICKUP) order.price else order.price + 300.0,
             status = order.status.code,
             receiverName = order.receiverName,
+            receiverSurname = order.receiverSurname,
             receiverApartmentNum = order.receiverApartmentNum,
             receiverEmail = order.receiverEmail,
             receiverHouseNum = order.receiverHouseNum,

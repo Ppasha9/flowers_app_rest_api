@@ -46,8 +46,11 @@ class CartController {
 
     @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
     @PostMapping("/remove-product")
-    fun removeProduct(@RequestParam(name = "productId", required = true) productId: Long): ResponseEntity<Any> {
-        logger.debug("Removing product with id=$productId to cart")
+    fun removeProduct(
+        @RequestParam(name = "productId", required = true) productId: Long,
+        @RequestParam(name = "permanently", required = false) permanently: Boolean?
+    ): ResponseEntity<Any> {
+        logger.debug("Removing product with id=$productId to cart, permanently=$permanently")
 
         if (!productService.existsById(productId)) {
             return ResponseEntity("Not found product with id=$productId", HttpStatus.BAD_REQUEST)
@@ -56,7 +59,7 @@ class CartController {
         val currUser = userService.getCurrentAuthorizedUser()
             ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
 
-        cartService.removeProductFromCart(currUser, productService.findById(productId).get())
+        cartService.removeProductFromCart(currUser, productService.findById(productId).get(), permanently)
         return ResponseEntity.ok("Product was successfully removed")
     }
 

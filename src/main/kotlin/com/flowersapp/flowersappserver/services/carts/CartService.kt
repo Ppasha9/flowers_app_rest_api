@@ -55,7 +55,7 @@ class CartService {
     }
 
     @Transactional
-    fun removeProductFromCart(user: User, product: Product) {
+    fun removeProductFromCart(user: User, product: Product, permanently: Boolean?) {
         val cart = getCartForUser(user)
 
         if (!productToCartRepository.existsByCartIdAndProductId(cart.id!!, product.id!!)) {
@@ -63,11 +63,15 @@ class CartService {
         }
 
         val prToCart = productToCartRepository.findByCartIdAndProductId(cart.id!!, product.id!!)!!
-        prToCart.amount--
-        if (prToCart.amount == 0) {
+        if (permanently != null && permanently == true) {
             productToCartRepository.delete(prToCart)
         } else {
-            productToCartRepository.save(prToCart)
+            prToCart.amount--
+            if (prToCart.amount == 0) {
+                productToCartRepository.delete(prToCart)
+            } else {
+                productToCartRepository.save(prToCart)
+            }
         }
 
         cart.price -= product.price
@@ -142,6 +146,7 @@ class CartService {
         val cartFormationInfo = cartFormationInfoRepository.findByCartId(cart.id!!)!!
 
         cartFormationInfo.receiverName = if (form.receiverName.isNullOrBlank()) cartFormationInfo.receiverName else form.receiverName!!
+        cartFormationInfo.receiverSurname = if (form.receiverSurname.isNullOrBlank()) cartFormationInfo.receiverSurname else form.receiverSurname!!
         cartFormationInfo.receiverPhone = if (form.receiverPhone.isNullOrBlank()) cartFormationInfo.receiverPhone else form.receiverPhone!!
         cartFormationInfo.receiverEmail = if (form.receiverEmail.isNullOrBlank()) cartFormationInfo.receiverEmail else form.receiverEmail!!
         cartFormationInfo.receiverApartmentNum = if (form.receiverApartmentNum.isNullOrBlank()) cartFormationInfo.receiverApartmentNum else form.receiverApartmentNum!!
@@ -164,6 +169,7 @@ class CartService {
             receiverName = cartFormationInfo.receiverName,
             receiverApartmentNum = cartFormationInfo.receiverApartmentNum,
             receiverEmail = cartFormationInfo.receiverEmail,
+            receiverSurname = cartFormationInfo.receiverSurname,
             receiverHouseNum = cartFormationInfo.receiverHouseNum,
             receiverPhone = cartFormationInfo.receiverPhone,
             receiverStreet = cartFormationInfo.receiverStreet,

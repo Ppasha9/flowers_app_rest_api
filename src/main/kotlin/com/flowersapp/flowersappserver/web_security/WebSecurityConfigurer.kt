@@ -66,13 +66,17 @@ class WebSecurityConfigurer : WebSecurityConfigurerAdapter() {
             .cors().and().csrf()
                 .disable()
             .authorizeRequests()
+                .antMatchers("/api/auth/**").permitAll()
                 // you can register new user only if you are not logged in
                 .antMatchers("/api/auth/signup").not().fullyAuthenticated()
                 // you can sign in as any user only if you are not logged in
                 .antMatchers("/api/auth/signin").not().fullyAuthenticated()
-                .antMatchers("/login/oauth2/code/google", "/login").permitAll()
-                .antMatchers(HttpMethod.GET,"/api/product/**").permitAll()
+                .antMatchers("/", "/error", "/webjars/**", "/user", "/login/oauth2/code/google", "/login").permitAll()
+                .antMatchers("/api/product/**").permitAll()
                 .antMatchers("/api/category/**").permitAll()
+                .antMatchers("/api/tag/**").permitAll()
+                .antMatchers("/api/cart/**").permitAll()
+                .antMatchers("/api/order/**").permitAll()
             // all other urls require authentication
             .anyRequest().authenticated()
             .and()

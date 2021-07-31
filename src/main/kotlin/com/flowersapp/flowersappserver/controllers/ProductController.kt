@@ -39,12 +39,14 @@ class ProductController {
         @RequestParam(name = "min-price", required = false) minPrice: Int?,
         @RequestParam(name = "max-price", required = false) maxPrice: Int?,
         @RequestParam(name = "category", required = false) category: String?,
-        @RequestParam(name = "group-num", required = false) groupNum: Int?
+        @RequestParam(name = "group-num", required = false) groupNum: Int?,
+        @RequestParam(name = "tags", required = false) tags: String?,
+        @RequestParam(name = "flowers", required = false) flowers: String?
     ): ResponseEntity<Any> {
         logger.debug("Filter products")
-        logger.debug("Params: limit=$limit, subsrt=$substring, min-price=$minPrice, max-price=$maxPrice, category=$category")
+        logger.debug("Params: limit=$limit, subsrt=$substring, min-price=$minPrice, max-price=$maxPrice, category=$category, tags=$tags, flowers=$flowers")
 
-        val filteredProducts = productService.filter(limit, substring, minPrice, maxPrice, category, groupNum)
+        val filteredProducts = productService.filter(limit, substring, minPrice, maxPrice, category, groupNum, tags, flowers)
         if (filteredProducts.isEmpty()) {
             return ResponseEntity("Not found products with these params", HttpStatus.NOT_FOUND)
         }
@@ -205,6 +207,48 @@ class ProductController {
             return ResponseEntity("Not found products by category=$category", HttpStatus.NOT_FOUND)
 
         return ResponseEntity.ok(maxPrice)
+    }
+
+    @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
+    @PostMapping("/add-to-favourite")
+    fun addProductToFavourite(
+        @RequestParam("productId", required = true) productId: Long
+    ): ResponseEntity<Any> {
+        logger.debug("Adding product with id $productId to favourite")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+
+        val err = productService.addProductToFavouriteForUser(productId, currUser)
+        return if (err == null) ResponseEntity.ok("Product was successfully added to favourite")
+            else ResponseEntity(err, HttpStatus.BAD_REQUEST)
+    }
+
+    @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
+    @PostMapping("/remove-from-favourite")
+    fun removeProductFromFavourite(
+        @RequestParam("productId", required = true) productId: Long
+    ): ResponseEntity<Any> {
+        logger.debug("Removing product with id $productId from favourite")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+
+        val err = productService.removeProductFromFavouriteForUser(productId, currUser)
+        return if (err == null) ResponseEntity.ok("Product was successfully removed from favourite")
+            else ResponseEntity(err, HttpStatus.BAD_REQUEST)
+    }
+
+    @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
+    @GetMapping("/all-favourite")
+    fun getAllFavouriteProducts(): ResponseEntity<Any> {
+        logger.debug("Getting all favourite products")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+
+        val products = productService.getAllFavouriteProductsForUser(currUser)
+        return ResponseEntity.ok(products.map { productService.getFullForm(it) }.toList())
     }
 
     companion object {

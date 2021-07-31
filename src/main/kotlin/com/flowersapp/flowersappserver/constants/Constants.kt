@@ -2,7 +2,6 @@ package com.flowersapp.flowersappserver.constants
 
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import javax.validation.constraints.NotNull
 
 object Constants {
     const val MIN_LENGTH = 3
@@ -43,7 +42,6 @@ object Constants {
     val MAX_TIME: OffsetDateTime = OffsetDateTime.of(294270, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
 
     // PostgreSQL
-    @NotNull
     const val POSTGRES_SCHEME = "public"
 
     // Categories codes
@@ -62,4 +60,16 @@ object Constants {
     const val ORDER_STATUS_SHIPPING = "Shipping"
     const val ORDER_STATUS_SUCCEEDED = "Succeeded"
     const val ORDER_STATUS_CANCELLED = "Cancelled"
+
+    // Tags codes
+    const val TAG_SOFT_CODE = "Нежный"
+    const val TAG_BIRTHDAY_CODE = "День Рождения"
+    const val TAG_TO_LOVE_CODE = "Любимой"
+    const val TAG_TO_MOM_CODE = "Маме"
+    const val TAG_ROSES_CODE = "Розы"
+    const val TAG_SIMPLY_CODE = "Просто так"
+    const val TAG_PINK_CODE = "Розовый"
+    const val TAG_BLUE_CODE = "Голубой"
+    const val TAG_TO_GIRLFRIEND_CODE = "Подруге"
+    const val TAG_FREE_SHIPPMENT_CODE = "Бесплатная доставка"
 }

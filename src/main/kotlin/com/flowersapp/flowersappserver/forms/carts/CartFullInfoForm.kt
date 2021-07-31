@@ -6,6 +6,7 @@ data class CartFullInfoForm(
     var receiverName: String,
     var receiverPhone: String,
     var receiverEmail: String,
+    var receiverSurname: String,
     var receiverStreet: String,
     var receiverHouseNum: String,
     var receiverApartmentNum: String,

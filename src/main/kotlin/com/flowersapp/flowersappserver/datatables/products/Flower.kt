@@ -9,15 +9,15 @@ import javax.persistence.Table
 import javax.validation.constraints.NotEmpty
 
 @Entity
-@Table(name = "tags")
-data class Tag(
+@Table(name = "flowers")
+data class Flower(
     @Id
-    @NotEmpty(message = "Please provide Tag code: `pink`, `red` and etc")
+    @NotEmpty(message = "Please provide Flower code: `rose` and etc")
     @Column(unique = true, length = Constants.STRING_LENGTH_LONG)
     var code: String = ""
 )
 
-interface TagRepository: JpaRepository<Tag, String> {
+interface FlowerRepository: JpaRepository<Flower, String> {
     fun existsByCode(code: String): Boolean
-    fun findByCode(code: String): Tag?
+    fun findByCode(code: String): Flower?
 }

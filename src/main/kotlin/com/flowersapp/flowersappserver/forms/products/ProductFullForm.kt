@@ -5,9 +5,14 @@ import java.time.OffsetDateTime
 data class ProductFullForm(
     var id: Long,
     var name: String,
-    var description: String,
+    var content: String,
+    var size: String,
+    var height: Double,
+    var diameter: Double,
     var price: Double,
+    var productFavouriteForUser: Boolean,
     var addDate: OffsetDateTime,
     var categories: ArrayList<String>,
-    var tags: ArrayList<String>
+    var tags: ArrayList<String>,
+    var flowers: ArrayList<String>
 )

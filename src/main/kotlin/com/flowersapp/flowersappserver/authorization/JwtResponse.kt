@@ -7,5 +7,6 @@ class JwtResponse(val accessToken: String, user: User) {
     val tokenType = "Bearer"
     val email = user.email
     val name = user.name
+    val surname = user.surname
     val phone = user.phone
 }

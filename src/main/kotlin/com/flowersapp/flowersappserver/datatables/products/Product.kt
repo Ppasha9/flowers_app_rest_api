@@ -22,7 +22,13 @@ data class Product(
 
     @NotEmpty
     @Column(columnDefinition = "TEXT")
-    var description: String = "",
+    var content: String = "",
+
+    var size: String = "",
+
+    var height: Double,
+
+    var diameter: Double,
 
     var price: Double = 0.0,
 
@@ -41,10 +47,12 @@ interface CustomProductRepository {
         minPrice: Int?,
         maxPrice: Int?,
         category: String?,
-        groupNum: Int?
+        groupNum: Int?,
+        tags: String?,
+        flowers: String?
     ): List<Product>
 
-    fun findMaxPriceByCategoryNative(tag: String): Double?
+    fun findMaxPriceByCategoryNative(category: String): Double?
 }
 
 class CustomProductRepositoryImpl: CustomProductRepository {
@@ -57,7 +65,9 @@ class CustomProductRepositoryImpl: CustomProductRepository {
         minPrice: Int?,
         maxPrice: Int?,
         category: String?,
-        groupNum: Int?
+        groupNum: Int?,
+        tags: String?,
+        flowers: String?
     ): List<Product> {
         var isFirst = true
         var query = """
@@ -76,6 +86,52 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             on
                 category_code = '$category' and product_id = products.id
             """
+        }
+
+        if (tags != null) {
+            val tagsStrs = tags.split(";")
+
+            query += """
+            join ${Constants.POSTGRES_SCHEME}.products_to_tags
+            on 
+            """
+
+            tagsStrs.forEachIndexed { index, s ->
+                run {
+                    query += """
+                tag_code = '$s' and product_id = products.id
+                    """
+
+                    if (index < tagsStrs.size - 1) {
+                        query += """
+                or
+                        """
+                    }
+                }
+            }
+        }
+
+        if (flowers != null) {
+            val flowersStrs = flowers.split(";")
+
+            query += """
+            join ${Constants.POSTGRES_SCHEME}.products_to_flowers
+            on 
+            """
+
+            flowersStrs.forEachIndexed { index, s ->
+                run {
+                    query += """
+                flower_code = '$s' and product_id = products.id
+                    """
+
+                    if (index < flowersStrs.size - 1) {
+                        query += """
+                or
+                        """
+                    }
+                }
+            }
         }
 
         if (substring != null || minPrice != null || maxPrice != null) {
