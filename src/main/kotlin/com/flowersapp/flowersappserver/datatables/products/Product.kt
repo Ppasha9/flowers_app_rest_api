@@ -41,7 +41,8 @@ interface ProductRepository: JpaRepository<Product, Long>, CustomProductReposito
 }
 
 interface CustomProductRepository {
-    fun findByLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+    fun findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+        range: ArrayList<Long>?,
         limit: Int?,
         substring: String?,
         minPrice: Int?,
@@ -59,7 +60,8 @@ class CustomProductRepositoryImpl: CustomProductRepository {
     @Autowired
     private lateinit var entityManager: EntityManager
 
-    override fun findByLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+    override fun findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+        range: ArrayList<Long>?,
         limit: Int?,
         substring: String?,
         minPrice: Int?,
@@ -177,6 +179,19 @@ class CustomProductRepositoryImpl: CustomProductRepository {
 
             query += """
                 $tmp(${Constants.POSTGRES_SCHEME}.products.price <= $maxPrice)
+            """
+        }
+
+        if (range != null) {
+            var tmp = ""
+            if (!isFirst) {
+                tmp = "and "
+            } else {
+                isFirst = false
+            }
+
+            query += """
+                $tmp(${Constants.POSTGRES_SCHEME}.products.id >= ${range[0]} and ${Constants.POSTGRES_SCHEME}.products.id <= ${range[1]})
             """
         }
 

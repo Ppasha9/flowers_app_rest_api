@@ -34,6 +34,7 @@ class ProductController {
 
     @GetMapping("")
     fun filterProducts(
+        @RequestParam(name = "range", required = false) range: ArrayList<Long>?,
         @RequestParam(name = "limit", required = false) limit: Int?,
         @RequestParam(name = "substr", required = false) substring: String?,
         @RequestParam(name = "min-price", required = false) minPrice: Int?,
@@ -41,12 +42,30 @@ class ProductController {
         @RequestParam(name = "category", required = false) category: String?,
         @RequestParam(name = "group-num", required = false) groupNum: Int?,
         @RequestParam(name = "tags", required = false) tags: String?,
-        @RequestParam(name = "flowers", required = false) flowers: String?
+        @RequestParam(name = "flowers", required = false) flowers: String?,
+        @RequestParam(name = "indices", required = false) indices: ArrayList<Long>?
     ): ResponseEntity<Any> {
         logger.debug("Filter products")
-        logger.debug("Params: limit=$limit, subsrt=$substring, min-price=$minPrice, max-price=$maxPrice, category=$category, tags=$tags, flowers=$flowers")
 
-        val filteredProducts = productService.filter(limit, substring, minPrice, maxPrice, category, groupNum, tags, flowers)
+        if (indices != null) {
+            logger.debug("Get products by indices=$indices")
+
+            val res = arrayListOf<ProductFullForm>()
+            indices.forEach {
+                val productOptional = productService.findById(it)
+                if (!productOptional.isPresent) {
+                    return ResponseEntity("Not found product by id=$it", HttpStatus.NOT_FOUND)
+                }
+                res.add(productService.getFullForm(productOptional.get()))
+            }
+
+            return ResponseEntity.ok(res)
+        }
+
+        logger.debug("Params: range=$range limit=$limit, subsrt=$substring, min-price=$minPrice, max-price=$maxPrice," +
+            " category=$category, tags=$tags, flowers=$flowers")
+
+        val filteredProducts = productService.filter(range, limit, substring, minPrice, maxPrice, category, groupNum, tags, flowers)
         if (filteredProducts.isEmpty()) {
             return ResponseEntity("Not found products with these params", HttpStatus.NOT_FOUND)
         }

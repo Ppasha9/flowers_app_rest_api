@@ -43,10 +43,12 @@ class ProductService {
     fun existsById(id: Long): Boolean = productRepository.existsById(id)
 
     @Transactional
-    fun filter(limit: Int?, substring: String?, minPrice: Int?, maxPrice: Int?, category: String?, groupNum: Int?, tags: String?, flowers: String?): List<Product> {
+    fun filter(range: ArrayList<Long>?, limit: Int?, substring: String?, minPrice: Int?, maxPrice: Int?,
+               category: String?, groupNum: Int?, tags: String?, flowers: String?): List<Product> {
         logger.debug("Filtering products in service")
 
-        val products = productRepository.findByLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+        val products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+            range = range,
             limit = limit,
             substring = substring,
             minPrice = minPrice,
