@@ -24,6 +24,7 @@ class FlowersAppServerApplication {
         userRepository: UserRepository,
         categoryRepository: CategoryRepository,
         tagRepository: TagRepository,
+        flowerRepository: FlowerRepository,
         cartStatusRepository: CartStatusRepository,
         passwordEncoder: BCryptPasswordEncoder,
         productRepository: ProductRepository,
@@ -70,7 +71,6 @@ class FlowersAppServerApplication {
                 Tag(Constants.TAG_BIRTHDAY_CODE),
                 Tag(Constants.TAG_TO_LOVE_CODE),
                 Tag(Constants.TAG_TO_MOM_CODE),
-                Tag(Constants.TAG_ROSES_CODE),
                 Tag(Constants.TAG_SIMPLY_CODE),
                 Tag(Constants.TAG_PINK_CODE),
                 Tag(Constants.TAG_BLUE_CODE),
@@ -79,6 +79,16 @@ class FlowersAppServerApplication {
             ).forEach {
                 if (!tagRepository.existsByCode(it.code)) {
                     tagRepository.saveAndFlush(it)
+                }
+            }
+
+            listOf(
+                Flower(Constants.FLOWER_ROSE_CODE),
+                Flower(Constants.FLOWER_TULIP_CODE),
+                Flower(Constants.FLOWER_CHRYSANTHEMUMS_CODE)
+            ).forEach {
+                if (!flowerRepository.existsByCode(it.code)) {
+                    flowerRepository.saveAndFlush(it)
                 }
             }
 

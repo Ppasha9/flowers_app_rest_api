@@ -45,6 +45,7 @@ class AuthController {
     fun singIn(
         @RequestParam(name = "email", required = false, defaultValue = "") emailOrPhone: String,
         @RequestParam(name = "password", required = false, defaultValue = "") password: String,
+        @RequestParam(name = "admin", required = false, defaultValue = false.toString()) admin: Boolean,
         @Valid @RequestBody loginRequest: LoginUserForm?
     ): ResponseEntity<Any> {
         var rPass = password
@@ -62,6 +63,11 @@ class AuthController {
         if (user == null) {
             logger.debug("Sign in failed. No such user by email or phone: {}", rLogin)
             return ResponseEntity("Fail. No such user.", HttpStatus.BAD_REQUEST)
+        }
+
+        if (admin && user.userType.code != Constants.ADMIN_USER_TYPE_CODE) {
+            logger.debug("Sign in failed. The user {} should have admin permissions", rLogin)
+            return ResponseEntity("Fail. The user should have admin permissions", HttpStatus.BAD_REQUEST)
         }
 
         val authentication: Authentication = authenticationManager.authenticate(

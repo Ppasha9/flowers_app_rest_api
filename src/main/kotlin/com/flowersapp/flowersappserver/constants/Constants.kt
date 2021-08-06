@@ -66,10 +66,14 @@ object Constants {
     const val TAG_BIRTHDAY_CODE = "День Рождения"
     const val TAG_TO_LOVE_CODE = "Любимой"
     const val TAG_TO_MOM_CODE = "Маме"
-    const val TAG_ROSES_CODE = "Розы"
     const val TAG_SIMPLY_CODE = "Просто так"
     const val TAG_PINK_CODE = "Розовый"
     const val TAG_BLUE_CODE = "Голубой"
     const val TAG_TO_GIRLFRIEND_CODE = "Подруге"
     const val TAG_FREE_SHIPPMENT_CODE = "Бесплатная доставка"
+
+    // Flowers codes
+    const val FLOWER_ROSE_CODE = "Розы"
+    const val FLOWER_TULIP_CODE = "Тюльпаны"
+    const val FLOWER_CHRYSANTHEMUMS_CODE = "Хризантемы"
 }

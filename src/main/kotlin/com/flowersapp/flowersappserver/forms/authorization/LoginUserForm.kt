@@ -11,5 +11,7 @@ data class LoginUserForm(
 
     @field:NotBlank
     @field:Size(min = Constants.PASSWORD_MIN_LENGTH, max = Constants.STRING_LENGTH_MIDDLE)
-    var password: String = ""
+    var password: String = "",
+
+    var admin: Boolean = false
 )
