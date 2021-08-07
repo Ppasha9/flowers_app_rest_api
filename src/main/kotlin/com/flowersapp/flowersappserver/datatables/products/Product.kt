@@ -136,11 +136,10 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             }
         }
 
-        if (substring != null || minPrice != null || maxPrice != null) {
+        if (substring != null || minPrice != null || maxPrice != null || range != null) {
             query += """
             where
             """
-
         }
 
         if (substring != null) {
