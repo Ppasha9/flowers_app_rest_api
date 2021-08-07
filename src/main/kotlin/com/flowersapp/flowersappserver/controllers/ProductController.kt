@@ -103,8 +103,11 @@ class ProductController {
         }
 
         val err = productService.createFrom(productForm)
-        return if (err == null) ResponseEntity("Product was successfully created", HttpStatus.CREATED)
-            else ResponseEntity(err, HttpStatus.BAD_REQUEST)
+        if (err != null) {
+            return ResponseEntity(err, HttpStatus.BAD_REQUEST)
+        }
+
+        return ResponseEntity(ProductCreateResultForm(id = productService.findByName(productForm.name)!!.id!!), HttpStatus.CREATED)
     }
 
     @PreAuthorize(Constants.ADMIN_AUTHORIZED_AUTHORITY)

@@ -37,12 +37,12 @@ data class Product(
 )
 
 interface ProductRepository: JpaRepository<Product, Long>, CustomProductRepository {
+    fun findByName(name: String): Product?
     fun existsByName(name: String): Boolean
 }
 
 interface CustomProductRepository {
     fun findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
-        range: ArrayList<Long>?,
         limit: Int?,
         substring: String?,
         minPrice: Int?,
@@ -61,7 +61,6 @@ class CustomProductRepositoryImpl: CustomProductRepository {
     private lateinit var entityManager: EntityManager
 
     override fun findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
-        range: ArrayList<Long>?,
         limit: Int?,
         substring: String?,
         minPrice: Int?,
@@ -139,7 +138,7 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             }
         }
 
-        if (substring != null || minPrice != null || maxPrice != null || range != null) {
+        if (substring != null || minPrice != null || maxPrice != null) {
             query += """
             where
             """
@@ -181,19 +180,6 @@ class CustomProductRepositoryImpl: CustomProductRepository {
 
             query += """
                 $tmp(${Constants.POSTGRES_SCHEME}.products.price <= $maxPrice)
-            """
-        }
-
-        if (range != null) {
-            var tmp = ""
-            if (!isFirst) {
-                tmp = "and "
-            } else {
-                isFirst = false
-            }
-
-            query += """
-                $tmp(${Constants.POSTGRES_SCHEME}.products.id >= ${range[0]} and ${Constants.POSTGRES_SCHEME}.products.id <= ${range[1]})
             """
         }
 

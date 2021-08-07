@@ -40,6 +40,9 @@ class ProductService {
     @Transactional
     fun findById(id: Long): Optional<Product> = productRepository.findById(id)
 
+    fun findByName(name: String): Product? = productRepository.findByName(name)
+
+    @Transactional
     fun existsById(id: Long): Boolean = productRepository.existsById(id)
 
     @Transactional
@@ -48,7 +51,6 @@ class ProductService {
         logger.debug("Filtering products in service")
 
         val products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
-            range = range,
             limit = limit,
             substring = substring,
             minPrice = minPrice,
@@ -58,6 +60,18 @@ class ProductService {
             tags = tags,
             flowers = flowers
         )
+
+        if (range != null) {
+            val newProducts = arrayListOf<Product>()
+            products.forEachIndexed { index, product ->
+                run {
+                    if (index >= range[0] && index <= range[1]) {
+                        newProducts.add(product)
+                    }
+                }
+            }
+            return newProducts
+        }
 
         if (limit != null && groupNum != null) {
             val newProducts = arrayListOf<Product>()
