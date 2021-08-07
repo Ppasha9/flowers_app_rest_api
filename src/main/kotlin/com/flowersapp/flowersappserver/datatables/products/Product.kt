@@ -76,7 +76,10 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             select
                 ${Constants.POSTGRES_SCHEME}.products.id,
                 ${Constants.POSTGRES_SCHEME}.products.name,
-                ${Constants.POSTGRES_SCHEME}.products.description,
+                ${Constants.POSTGRES_SCHEME}.products.content,
+                ${Constants.POSTGRES_SCHEME}.products.size,
+                ${Constants.POSTGRES_SCHEME}.products.height,
+                ${Constants.POSTGRES_SCHEME}.products.diameter,
                 ${Constants.POSTGRES_SCHEME}.products.price,
                 ${Constants.POSTGRES_SCHEME}.products.add_date 
             from ${Constants.POSTGRES_SCHEME}.products
