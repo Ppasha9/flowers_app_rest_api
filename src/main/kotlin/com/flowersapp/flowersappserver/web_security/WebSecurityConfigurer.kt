@@ -75,8 +75,10 @@ class WebSecurityConfigurer : WebSecurityConfigurerAdapter() {
                 .antMatchers("/api/product/**").permitAll()
                 .antMatchers("/api/category/**").permitAll()
                 .antMatchers("/api/tag/**").permitAll()
+                .antMatchers("/api/flower/**").permitAll()
                 .antMatchers("/api/cart/**").permitAll()
                 .antMatchers("/api/order/**").permitAll()
+                .antMatchers("/api/admin/**").permitAll()
             // all other urls require authentication
             .anyRequest().authenticated()
             .and()

@@ -3,9 +3,12 @@ package com.flowersapp.flowersappserver.services.orders
 import com.flowersapp.flowersappserver.constants.Constants
 import com.flowersapp.flowersappserver.datatables.carts.CartFormationInfoRepository
 import com.flowersapp.flowersappserver.datatables.carts.DeliveryMethod
+import com.flowersapp.flowersappserver.datatables.carts.PaymentMethod
 import com.flowersapp.flowersappserver.datatables.orders.Order
 import com.flowersapp.flowersappserver.datatables.orders.OrderRepository
+import com.flowersapp.flowersappserver.datatables.orders.OrderStatus
 import com.flowersapp.flowersappserver.datatables.orders.OrderStatusRepository
+import com.flowersapp.flowersappserver.datatables.products.ProductRepository
 import com.flowersapp.flowersappserver.datatables.products.ProductToCartRepository
 import com.flowersapp.flowersappserver.datatables.products.ProductToOrder
 import com.flowersapp.flowersappserver.datatables.products.ProductToOrderRepository
@@ -25,6 +28,8 @@ class OrderService {
     private lateinit var orderStatusRepository: OrderStatusRepository
     @Autowired
     private lateinit var productToOrderRepository: ProductToOrderRepository
+    @Autowired
+    private lateinit var productRepository: ProductRepository
 
     @Autowired
     private lateinit var cartService: CartService
@@ -120,5 +125,30 @@ class OrderService {
         }
 
         return res
+    }
+
+    @Transactional
+    fun createOneClickOrder(user: User?, productId: Long, oneClickForm: OrderOneClickForm): String? {
+        if (!productRepository.existsById(productId)) {
+            return "Product with id $productId doesn't exist"
+        }
+
+        val order = Order(
+            userCode = user?.code,
+            price = productRepository.findById(productId).get().price,
+            status = orderStatusRepository.findByCode(Constants.ORDER_STATUS_FORMING)!!,
+            receiverName = oneClickForm.receiverName,
+            receiverSurname = oneClickForm.receiverSurname,
+            receiverPhone = oneClickForm.receiverPhone,
+            receiverEmail = oneClickForm.receiverEmail,
+            receiverStreet = oneClickForm.receiverStreet,
+            receiverHouseNum = oneClickForm.receiverHouseNum,
+            receiverApartmentNum = oneClickForm.receiverApartmentNum,
+            deliveryComment = oneClickForm.deliveryComment,
+            deliveryMethod = DeliveryMethod.fromString(oneClickForm.deliveryMethod),
+            paymentMethod = PaymentMethod.fromString(oneClickForm.paymentMethod)
+        )
+        orderRepository.saveAndFlush(order)
+        return null
     }
 }

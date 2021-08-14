@@ -1,10 +1,12 @@
 package com.flowersapp.flowersappserver.services.products
 
+import com.flowersapp.flowersappserver.controllers.ProductController
 import com.flowersapp.flowersappserver.datatables.products.*
 import com.flowersapp.flowersappserver.datatables.users.User
 import com.flowersapp.flowersappserver.datatables.users.UserToFavouriteProduct
 import com.flowersapp.flowersappserver.datatables.users.UserToFavouriteProductRepository
 import com.flowersapp.flowersappserver.forms.products.*
+import com.flowersapp.flowersappserver.services.pictures.PictureService
 import com.flowersapp.flowersappserver.services.users.UserService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder
 import java.time.OffsetDateTime
 import java.util.*
 
@@ -20,6 +23,10 @@ import java.util.*
 class ProductService {
     @Autowired
     private lateinit var productRepository: ProductRepository
+    @Autowired
+    private lateinit var pictureService: PictureService
+    @Autowired
+    private lateinit var productToPictureRepository: ProductToPictureRepository
     @Autowired
     private lateinit var productToCategoryRepository: ProductToCategoryRepository
     @Autowired
@@ -40,7 +47,11 @@ class ProductService {
     @Transactional
     fun findById(id: Long): Optional<Product> = productRepository.findById(id)
 
+    @Transactional
     fun findByName(name: String): Product? = productRepository.findByName(name)
+
+    @Transactional
+    fun getTotalNum(): Long = productRepository.count()
 
     @Transactional
     fun existsById(id: Long): Boolean = productRepository.existsById(id)
@@ -50,7 +61,7 @@ class ProductService {
                category: String?, groupNum: Int?, tags: String?, flowers: String?): List<Product> {
         logger.debug("Filtering products in service")
 
-        val products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+        var products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
             limit = limit,
             substring = substring,
             minPrice = minPrice,
@@ -60,6 +71,7 @@ class ProductService {
             tags = tags,
             flowers = flowers
         )
+        products = products.distinct()
 
         if (range != null) {
             val newProducts = arrayListOf<Product>()
@@ -85,6 +97,24 @@ class ProductService {
         return products
     }
 
+    @Transactional
+    fun getByRange(range: ArrayList<Long>?): List<Product> {
+        val products = productRepository.findAll()
+        if (range != null) {
+            val newProducts = arrayListOf<Product>()
+            products.forEachIndexed { index, product ->
+                run {
+                    if (index >= range[0] && index <= range[1]) {
+                        newProducts.add(product)
+                    }
+                }
+            }
+            return newProducts
+        }
+        return products
+    }
+
+    @Transactional
     fun isProductFavouriteForCurrentUser(productId: Long): Boolean {
         val currUser = userService.getCurrentAuthorizedUser()
         var isFavourite = false
@@ -97,6 +127,7 @@ class ProductService {
         return isFavourite
     }
 
+    @Transactional
     fun getCuttedForm(product: Product): ProductCuttedForm {
         return ProductCuttedForm(
             id = product.id!!,
@@ -106,6 +137,7 @@ class ProductService {
         )
     }
 
+    @Transactional
     fun getFullForm(product: Product): ProductFullForm {
         val date = if (product.addDate != null) product.addDate!! else OffsetDateTime.now()
         val res = ProductFullForm(
@@ -135,6 +167,47 @@ class ProductService {
             res.flowers.add(it.flower.code)
         }
 
+        return res
+    }
+
+    @Transactional
+    fun getFullAdminForm(product: Product): ProductFullAdminForm {
+        val fullForm = getFullForm(product)
+        val res = ProductFullAdminForm(
+            id = fullForm.id,
+            name = fullForm.name,
+            content = fullForm.content,
+            size = fullForm.size,
+            height = fullForm.height,
+            diameter = fullForm.diameter,
+            price = fullForm.price,
+            productFavouriteForUser = fullForm.productFavouriteForUser,
+            addDate = fullForm.addDate,
+            categories = fullForm.categories,
+            tags = fullForm.tags,
+            flowers = fullForm.flowers,
+            picFilename = "",
+            picUrl = ""
+        )
+
+        if (!pictureService.canGetPictures(fullForm.id)) {
+            return res
+        }
+
+        val loadFiles = pictureService.loadFiles()
+        loadFiles.forEach {
+            if (productToPictureRepository.existsByProductIdAndFilename(
+                    productId = fullForm.id,
+                    filename = it.fileName.toString()
+                )) {
+                res.picFilename = it.fileName.toString()
+                res.picUrl = MvcUriComponentsBuilder.fromMethodName(
+                    ProductController::class.java,
+                    "downloadFile",
+                    it.fileName.toString()
+                ).build().toString()
+            }
+        }
         return res
     }
 
@@ -186,6 +259,36 @@ class ProductService {
                 product = product,
                 flower = flowerRepository.findByCode(it)!!
             ))
+        }
+
+        return null
+    }
+
+    @Transactional
+    fun createFromAdmin(productForm: ProductCreateAdminForm): String? {
+        val createForm = ProductCreateForm(
+            name = productForm.name,
+            content = productForm.content,
+            size = productForm.size,
+            height = productForm.height,
+            diameter = productForm.diameter,
+            price = productForm.price,
+            categories = productForm.categories,
+            tags = productForm.tags,
+            flowers = productForm.flowers
+        )
+        val err = createFrom(createForm)
+        if (err != null || productForm.picture == null) {
+            return err
+        }
+
+        val picUploadForm = UploadPictureForm(
+            productId = productRepository.findByName(productForm.name)!!.id!!,
+            uploadFile = productForm.picture!!
+        )
+        val picErr = pictureService.createFrom(picUploadForm)
+        if (picErr != null) {
+            return picErr
         }
 
         return null
@@ -329,6 +432,30 @@ class ProductService {
     fun getAllFavouriteProductsForUser(user: User): List<Product> {
         val res = userToFavouriteProductRepository.findByUserCode(user.code)
         return res.map { productRepository.findById(it.productId!!).get() }.toList()
+    }
+
+    @Transactional
+    fun deleteProductForever(id: Long): String? {
+        if (!productRepository.existsById(id)) {
+            return "Product with id $id doesn't exist"
+        }
+
+        productRepository.delete(productRepository.findById(id).get())
+        return null
+    }
+
+    fun deleteProductsForever(indices: ArrayList<Long>): String? {
+        indices.forEach {
+            if (!productRepository.existsById(it)) {
+                return "Product with id $it doesn't exist"
+            }
+        }
+
+        indices.forEach {
+            productRepository.delete(productRepository.findById(it).get())
+        }
+
+        return null
     }
 
     companion object {

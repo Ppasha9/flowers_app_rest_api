@@ -2,7 +2,9 @@ package com.flowersapp.flowersappserver.controllers
 
 import com.flowersapp.flowersappserver.constants.Constants
 import com.flowersapp.flowersappserver.datatables.products.ProductToPictureRepository
+import com.flowersapp.flowersappserver.forms.orders.OrderOneClickForm
 import com.flowersapp.flowersappserver.forms.products.*
+import com.flowersapp.flowersappserver.services.orders.OrderService
 import com.flowersapp.flowersappserver.services.pictures.PictureService
 import com.flowersapp.flowersappserver.services.products.ProductService
 import com.flowersapp.flowersappserver.services.users.UserService
@@ -31,6 +33,8 @@ class ProductController {
     private lateinit var pictureService: PictureService
     @Autowired
     private lateinit var productToPictureRepository: ProductToPictureRepository
+    @Autowired
+    private lateinit var orderService: OrderService
 
     @GetMapping("")
     fun filterProducts(
@@ -70,7 +74,7 @@ class ProductController {
             return ResponseEntity("Not found products with these params", HttpStatus.NOT_FOUND)
         }
 
-        val productsForms = filteredProducts.map { productService.getCuttedForm(it) } as ArrayList<ProductCuttedForm>
+        val productsForms = filteredProducts.map { productService.getFullForm(it) } as ArrayList<ProductFullForm>
         return ResponseEntity.ok(ProductsFilterForm(products = productsForms))
     }
 
@@ -106,7 +110,6 @@ class ProductController {
         if (err != null) {
             return ResponseEntity(err, HttpStatus.BAD_REQUEST)
         }
-
         return ResponseEntity(ProductCreateResultForm(id = productService.findByName(productForm.name)!!.id!!), HttpStatus.CREATED)
     }
 
@@ -271,6 +274,26 @@ class ProductController {
 
         val products = productService.getAllFavouriteProductsForUser(currUser)
         return ResponseEntity.ok(products.map { productService.getFullForm(it) }.toList())
+    }
+
+    @PostMapping("/one-click/{id}")
+    fun buyByOneClick(
+        @PathVariable(name = "id", required = true) productId: Long,
+        @Valid @RequestBody reqBodyForm: OrderOneClickForm?
+    ): ResponseEntity<Any> {
+        logger.debug("Forming one-click order")
+
+        if (reqBodyForm == null) {
+            return ResponseEntity("Invalid request body", HttpStatus.BAD_REQUEST)
+        }
+
+        val currUser = userService.getCurrentAuthorizedUser()
+        val err = orderService.createOneClickOrder(currUser, productId, reqBodyForm)
+        return if (err == null) {
+            ResponseEntity.ok("One-click order was successfully created")
+        } else {
+            ResponseEntity(err, HttpStatus.BAD_REQUEST)
+        }
     }
 
     companion object {

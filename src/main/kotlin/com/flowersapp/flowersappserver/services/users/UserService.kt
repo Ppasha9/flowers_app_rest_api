@@ -1,9 +1,11 @@
 package com.flowersapp.flowersappserver.services.users
 
 import com.flowersapp.flowersappserver.constants.Constants
+import com.flowersapp.flowersappserver.datatables.products.Product
 import com.flowersapp.flowersappserver.datatables.users.*
 import com.flowersapp.flowersappserver.forms.authorization.MeUserForm
 import com.flowersapp.flowersappserver.forms.authorization.SignUpUserForm
+import com.flowersapp.flowersappserver.forms.authorization.UserAdminPanelForm
 import com.flowersapp.flowersappserver.forms.delivery_address.DeliveryAddressForm
 import com.flowersapp.flowersappserver.forms.delivery_address.DeliveryAddressGetForm
 import com.flowersapp.flowersappserver.services.carts.CartService
@@ -38,7 +40,22 @@ class UserService {
     @Transactional
     fun findByEmailOrPhone(emailOrPhone: String): User? = userRepository.findByEmail(emailOrPhone) ?: userRepository.findByPhone(emailOrPhone)
 
+    @Transactional
     fun save(user: User) = userRepository.save(user)
+
+    @Transactional
+    fun getTotalNumCasual(): Int {
+        val allUsers = userRepository.findAll()
+        val casualUsers = allUsers.filter { user -> user.userType.code == Constants.DEFAULT_USER_TYPE_CODE }
+        return casualUsers.count()
+    }
+
+    @Transactional
+    fun getTotalNumAdmin(): Int {
+        val allUsers = userRepository.findAll()
+        val adminUsers = allUsers.filter { user -> user.userType.code == Constants.ADMIN_USER_TYPE_CODE }
+        return adminUsers.count()
+    }
 
     fun getCurrentAuthorizedUser(): User? = findByEmail(SecurityContextHolder.getContext().authentication.name)
 
@@ -200,6 +217,52 @@ class UserService {
         }
 
         return res
+    }
+
+    fun getMeAdminPanelForm(user: User): UserAdminPanelForm {
+        return UserAdminPanelForm(
+            id = user.code,
+            name = user.name,
+            surname = user.surname,
+            email = user.email,
+            phone = user.phone
+        )
+    }
+
+    @Transactional
+    fun getByRange(range: ArrayList<Long>?): List<User> {
+        val users = userRepository.findAll()
+        val casualUsers = users.filter { user -> user.userType.code == Constants.DEFAULT_USER_TYPE_CODE }
+        if (range != null) {
+            val newCasualUsers = arrayListOf<User>()
+            casualUsers.forEachIndexed { index, user ->
+                run {
+                    if (index >= range[0] && index <= range[1]) {
+                        newCasualUsers.add(user)
+                    }
+                }
+            }
+            return newCasualUsers
+        }
+        return casualUsers
+    }
+
+    @Transactional
+    fun getAdminsByRange(range: ArrayList<Long>?): List<User> {
+        val users = userRepository.findAll()
+        val adminUsers = users.filter { user -> user.userType.code == Constants.ADMIN_USER_TYPE_CODE }
+        if (range != null) {
+            val newAdminUsers = arrayListOf<User>()
+            adminUsers.forEachIndexed { index, user ->
+                run {
+                    if (index >= range[0] && index <= range[1]) {
+                        newAdminUsers.add(user)
+                    }
+                }
+            }
+            return newAdminUsers
+        }
+        return adminUsers
     }
 
     companion object {

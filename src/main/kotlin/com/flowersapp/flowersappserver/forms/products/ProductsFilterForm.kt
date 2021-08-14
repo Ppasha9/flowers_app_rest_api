@@ -1,5 +1,5 @@
 package com.flowersapp.flowersappserver.forms.products
 
 data class ProductsFilterForm(
-    var products: ArrayList<ProductCuttedForm>
+    var products: ArrayList<ProductFullForm>
 )

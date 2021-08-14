@@ -88,7 +88,7 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             query += """
             join ${Constants.POSTGRES_SCHEME}.products_to_categories
             on
-                category_code = '$category' and product_id = products.id
+                ${Constants.POSTGRES_SCHEME}.products_to_categories.category_code = '$category' and ${Constants.POSTGRES_SCHEME}.products_to_categories.product_id = ${Constants.POSTGRES_SCHEME}.products.id
             """
         }
 
@@ -103,7 +103,7 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             tagsStrs.forEachIndexed { index, s ->
                 run {
                     query += """
-                tag_code = '$s' and product_id = products.id
+                ${Constants.POSTGRES_SCHEME}.products_to_tags.tag_code = '$s' and ${Constants.POSTGRES_SCHEME}.products_to_tags.product_id = ${Constants.POSTGRES_SCHEME}.products.id
                     """
 
                     if (index < tagsStrs.size - 1) {
@@ -126,7 +126,7 @@ class CustomProductRepositoryImpl: CustomProductRepository {
             flowersStrs.forEachIndexed { index, s ->
                 run {
                     query += """
-                flower_code = '$s' and product_id = products.id
+                ${Constants.POSTGRES_SCHEME}.products_to_flowers.flower_code = '$s' and ${Constants.POSTGRES_SCHEME}.products_to_flowers.product_id = ${Constants.POSTGRES_SCHEME}.products.id
                     """
 
                     if (index < flowersStrs.size - 1) {
