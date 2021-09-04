@@ -28,12 +28,19 @@ class AdminController {
     private lateinit var productService: ProductService
 
     /* `getList` request from react-admin */
+    @PreAuthorize(Constants.ADMIN_AUTHORIZED_AUTHORITY)
     @GetMapping("/products")
     fun getProductsList(
         @RequestParam(name = "range", required = false) range: ArrayList<Long>?,
         @RequestParam(name = "indices", required = false) indices: ArrayList<Long>?
     ): ResponseEntity<Any> {
         logger.debug("ADMIN PANEL: [PRODUCTS] [GET] - getList. Arguments: range: $range; indices: $indices")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+        if (currUser.userType.code != Constants.ADMIN_USER_TYPE_CODE) {
+            return ResponseEntity("Only admin can create products", HttpStatus.FORBIDDEN)
+        }
 
         if (indices != null) {
             logger.debug("ADMIN PANEL: [PRODUCTS] [GET] - getList. Get products by indices=$indices")
@@ -102,11 +109,18 @@ class AdminController {
     }
 
     /* `getOne` request from react-admin */
+    @PreAuthorize(Constants.ADMIN_AUTHORIZED_AUTHORITY)
     @GetMapping("/products/{id}")
     fun getOneProduct(
         @PathVariable(name = "id", required = true) id: Long
     ): ResponseEntity<Any> {
         logger.debug("ADMIN PANEL: [PRODUCTS] [GET] - getOne. Id: $id")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+        if (currUser.userType.code != Constants.ADMIN_USER_TYPE_CODE) {
+            return ResponseEntity("Only admin can create products", HttpStatus.FORBIDDEN)
+        }
 
         val productOptional = productService.findById(id)
         if (!productOptional.isPresent) {
@@ -180,11 +194,18 @@ class AdminController {
 
     /***  USERS REQUESTS: "/api/admin/users/..." ***/
     /* `getList` request from react-admin */
+    @PreAuthorize(Constants.ADMIN_AUTHORIZED_AUTHORITY)
     @GetMapping("/users")
     fun getUsersList(
         @RequestParam(name = "range", required = false) range: ArrayList<Long>?
     ): ResponseEntity<Any> {
         logger.debug("ADMIN PANEL: [USERS] [GET] - getList. Arguments: range: $range")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+        if (currUser.userType.code != Constants.ADMIN_USER_TYPE_CODE) {
+            return ResponseEntity("Only admin can create products", HttpStatus.FORBIDDEN)
+        }
 
         val users = userService.getByRange(range)
         val usersForms = users.map { user -> userService.getMeAdminPanelForm(user) } as ArrayList<UserAdminPanelForm>
@@ -196,11 +217,18 @@ class AdminController {
 
     /***  ADMIN USERS REQUESTS: "/api/admin/admins/..." ***/
     /* `getList` request from react-admin */
+    @PreAuthorize(Constants.ADMIN_AUTHORIZED_AUTHORITY)
     @GetMapping("/admins")
     fun getAdminsUsersList(
         @RequestParam(name = "range", required = false) range: ArrayList<Long>?
     ): ResponseEntity<Any> {
         logger.debug("ADMIN PANEL: [ADMINS] [GET] - getList. Arguments: range: $range")
+
+        val currUser = userService.getCurrentAuthorizedUser()
+            ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
+        if (currUser.userType.code != Constants.ADMIN_USER_TYPE_CODE) {
+            return ResponseEntity("Only admin can create products", HttpStatus.FORBIDDEN)
+        }
 
         val users = userService.getAdminsByRange(range)
         val usersForms = users.map { user -> userService.getMeAdminPanelForm(user) } as ArrayList<UserAdminPanelForm>

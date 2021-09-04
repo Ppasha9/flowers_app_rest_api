@@ -61,7 +61,7 @@ class ProductService {
                category: String?, groupNum: Int?, tags: String?, flowers: String?): List<Product> {
         logger.debug("Filtering products in service")
 
-        var products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
+        val products = productRepository.findByRangeAndLimitAndSubstringAndMinPriceAndMaxPriceAndCategoryNative(
             limit = limit,
             substring = substring,
             minPrice = minPrice,
@@ -71,11 +71,12 @@ class ProductService {
             tags = tags,
             flowers = flowers
         )
-        products = products.distinct()
+
+        val productsDistinct = products.distinctBy { product -> product.id!! }
 
         if (range != null) {
             val newProducts = arrayListOf<Product>()
-            products.forEachIndexed { index, product ->
+            productsDistinct.forEachIndexed { index, product ->
                 run {
                     if (index >= range[0] && index <= range[1]) {
                         newProducts.add(product)
@@ -87,8 +88,8 @@ class ProductService {
 
         if (limit != null && groupNum != null) {
             val newProducts = arrayListOf<Product>()
-            for (i in (limit * (groupNum - 1)) until products.count()) {
-                newProducts.add(products[i])
+            for (i in (limit * (groupNum - 1)) until productsDistinct.count()) {
+                newProducts.add(productsDistinct[i])
             }
 
             return newProducts
