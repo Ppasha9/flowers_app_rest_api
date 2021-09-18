@@ -7,6 +7,12 @@ import java.time.OffsetDateTime
 import javax.persistence.*
 import javax.validation.constraints.NotEmpty
 
+data class ProductParameter(
+    var name: String,
+    var value: String,
+    var price: Double
+)
+
 @Entity
 @Table(name = "products")
 data class Product(
@@ -24,11 +30,7 @@ data class Product(
     @Column(columnDefinition = "TEXT")
     var content: String = "",
 
-    var size: String = "",
-
-    var height: Double,
-
-    var diameter: Double,
+    var parameters: ArrayList<ProductParameter> = arrayListOf(),
 
     var price: Double = 0.0,
 

@@ -3,6 +3,7 @@ package com.flowersapp.flowersappserver.services.carts
 import com.flowersapp.flowersappserver.constants.Constants
 import com.flowersapp.flowersappserver.datatables.carts.*
 import com.flowersapp.flowersappserver.datatables.products.Product
+import com.flowersapp.flowersappserver.datatables.products.ProductParameter
 import com.flowersapp.flowersappserver.datatables.products.ProductToCart
 import com.flowersapp.flowersappserver.datatables.products.ProductToCartRepository
 import com.flowersapp.flowersappserver.datatables.users.User
@@ -74,28 +75,60 @@ class CartService {
             }
         }
 
-        cart.price -= product.price
+        val priceToSub = if (prToCart.productParameter != null) prToCart.productParameter!!.price else product.price
+        cart.price -= priceToSub
         cartRepository.saveAndFlush(cart)
     }
 
     @Transactional
-    fun addProductToCart(user: User, product: Product) {
+    fun addProductToCart(user: User, product: Product, parameterName: String, parameterValue: String) {
         val cart = getCartForUser(user)
 
         if (productToCartRepository.existsByCartIdAndProductId(cart.id!!, product.id!!)) {
             val ptc = productToCartRepository.findByCartIdAndProductId(cart.id!!, product.id!!)!!
             ptc.amount++
             productToCartRepository.saveAndFlush(ptc)
-        } else {
+
+            val priceToAdd = if (ptc.productParameter != null) ptc.productParameter!!.price else product.price
+            cart.price += priceToAdd
+            cartRepository.saveAndFlush(cart)
+
+            return
+        }
+
+        if (parameterName.isBlank() || parameterValue.isBlank()) {
             productToCartRepository.saveAndFlush(ProductToCart(
                 product = product,
                 cart = cart,
-                amount = 1
+                amount = 1,
+                productParameter = null
             ))
-        }
 
-        cart.price += product.price
-        cartRepository.saveAndFlush(cart)
+            cart.price += product.price
+            cartRepository.saveAndFlush(cart)
+
+            return
+        } else {
+            var parameter: ProductParameter? = null
+            product.parameters.forEach {
+                if (it.name == parameterName && it.value == parameterValue) {
+                    parameter = it
+                }
+            }
+
+            productToCartRepository.saveAndFlush(ProductToCart(
+                product = product,
+                cart = cart,
+                amount = 1,
+                productParameter = parameter
+            ))
+
+            val priceToAdd = if (parameter != null) parameter!!.price else product.price
+            cart.price += priceToAdd
+            cartRepository.saveAndFlush(cart)
+
+            return
+        }
     }
 
     @Transactional

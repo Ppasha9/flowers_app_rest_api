@@ -21,7 +21,9 @@ data class ProductToOrder(
     @JoinColumn(name = "product_code")
     var product: Product,
 
-    var amount: Int = 1
+    var amount: Int = 1,
+
+    var productParameter: ProductParameter? = null
 )
 
 interface ProductToOrderRepository: JpaRepository<ProductToOrder, Long> {

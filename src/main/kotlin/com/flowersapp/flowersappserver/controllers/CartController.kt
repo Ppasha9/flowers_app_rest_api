@@ -30,7 +30,11 @@ class CartController {
 
     @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
     @PostMapping("/add-product")
-    fun addProductToCart(@RequestParam(name = "productId", required = true) productId: Long): ResponseEntity<Any> {
+    fun addProductToCart(
+        @RequestParam(name = "productId", required = true) productId: Long,
+        @RequestParam(name = "parameterName", required = false) parameterName: String?,
+        @RequestParam(name = "parameterValue", required = false) parameterValue: String?
+    ): ResponseEntity<Any> {
         logger.debug("Adding product with id=$productId to cart")
 
         if (!productService.existsById(productId)) {
@@ -40,7 +44,12 @@ class CartController {
         val currUser = userService.getCurrentAuthorizedUser()
             ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
 
-        cartService.addProductToCart(currUser, productService.findById(productId).get())
+        cartService.addProductToCart(
+            user = currUser,
+            product = productService.findById(productId).get(),
+            parameterName = parameterName ?: "",
+            parameterValue = parameterValue ?: ""
+        )
         return ResponseEntity.ok("Product was successfully added")
     }
 

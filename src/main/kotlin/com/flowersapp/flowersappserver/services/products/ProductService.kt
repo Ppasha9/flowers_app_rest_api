@@ -145,12 +145,10 @@ class ProductService {
             id = product.id!!,
             name = product.name,
             content = product.content,
-            size = product.size,
-            height = product.height,
-            diameter = product.diameter,
             price = product.price,
             productFavouriteForUser = isProductFavouriteForCurrentUser(product.id!!),
             addDate = date,
+            parameters = product.parameters,
             categories = arrayListOf(),
             tags = arrayListOf(),
             flowers = arrayListOf()
@@ -178,12 +176,10 @@ class ProductService {
             id = fullForm.id,
             name = fullForm.name,
             content = fullForm.content,
-            size = fullForm.size,
-            height = fullForm.height,
-            diameter = fullForm.diameter,
             price = fullForm.price,
             productFavouriteForUser = fullForm.productFavouriteForUser,
             addDate = fullForm.addDate,
+            parameters = fullForm.parameters,
             categories = fullForm.categories,
             tags = fullForm.tags,
             flowers = fullForm.flowers,
@@ -221,10 +217,8 @@ class ProductService {
         val product = Product(
             name = productForm.name,
             content = productForm.content,
-            size = productForm.size,
-            height = productForm.height,
-            diameter = productForm.diameter,
             price = productForm.price,
+            parameters = productForm.parameters ?: arrayListOf(),
             addDate = OffsetDateTime.now()
         )
         productRepository.saveAndFlush(product)
@@ -270,10 +264,8 @@ class ProductService {
         val createForm = ProductCreateForm(
             name = productForm.name,
             content = productForm.content,
-            size = productForm.size,
-            height = productForm.height,
-            diameter = productForm.diameter,
             price = productForm.price,
+            parameters = productForm.parameters,
             categories = productForm.categories,
             tags = productForm.tags,
             flowers = productForm.flowers
@@ -310,9 +302,7 @@ class ProductService {
         product.name = productForm.name
         product.price = productForm.price
         product.content = productForm.content
-        product.size = productForm.size
-        product.height = productForm.height
-        product.diameter = productForm.diameter
+        product.parameters = productForm.parameters ?: arrayListOf()
         productRepository.save(product)
 
         val currCategories = productToCategoryRepository.findByProductId(productId)
