@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder
 import java.time.OffsetDateTime
 import java.util.*
+import kotlin.collections.ArrayList
 
 @Service
 class ProductService {
@@ -148,7 +149,7 @@ class ProductService {
             price = product.price,
             productFavouriteForUser = isProductFavouriteForCurrentUser(product.id!!),
             addDate = date,
-            parameters = product.parameters,
+            parameters = product.parameters as ArrayList<ProductParameter>,
             categories = arrayListOf(),
             tags = arrayListOf(),
             flowers = arrayListOf()

@@ -7,7 +7,15 @@ import java.time.OffsetDateTime
 import javax.persistence.*
 import javax.validation.constraints.NotEmpty
 
+@Entity
+@Table(name = "products_parameters")
 data class ProductParameter(
+    @Id
+    @Column(unique = true)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "products_parameters_gen")
+    @SequenceGenerator(name = "products_parameters_gen", sequenceName = "products_parameters_seq")
+    var id: Long,
+
     var name: String,
     var value: String,
     var price: Double
@@ -30,9 +38,11 @@ data class Product(
     @Column(columnDefinition = "TEXT")
     var content: String = "",
 
-    var parameters: ArrayList<ProductParameter> = arrayListOf(),
-
     var price: Double = 0.0,
+
+    @OneToMany(cascade = [CascadeType.PERSIST], fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "id")
+    var parameters: List<ProductParameter> = arrayListOf(),
 
     @Column(name = "add_date")
     var addDate: OffsetDateTime? = null

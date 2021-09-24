@@ -1,6 +1,7 @@
 package com.flowersapp.flowersappserver.controllers
 
 import com.flowersapp.flowersappserver.constants.Constants
+import com.flowersapp.flowersappserver.datatables.products.ProductParameter
 import com.flowersapp.flowersappserver.forms.authorization.UserAdminPanelForm
 import com.flowersapp.flowersappserver.forms.products.*
 import com.flowersapp.flowersappserver.services.products.ProductService
@@ -71,10 +72,8 @@ class AdminController {
     fun createProduct(
         @RequestParam(name = "name", required = true) name: String,
         @RequestParam(name = "content", required = true) content: String,
-        @RequestParam(name = "size", required = true) size: String,
-        @RequestParam(name = "height", required = true) height: Double,
-        @RequestParam(name = "diameter", required = true) diameter: Double,
         @RequestParam(name = "price", required = true) price: Double,
+        @RequestParam(name = "parameters", required = true) parameters: ArrayList<ProductParameter>,
         @RequestParam(name = "categories", required = true) categories: ArrayList<String>,
         @RequestParam(name = "tags", required = true) tags: ArrayList<String>,
         @RequestParam(name = "flowers", required = true) flowers: ArrayList<String>,
@@ -83,10 +82,8 @@ class AdminController {
         val productForm = ProductCreateAdminForm(
             name = name,
             content = content,
-            size = size,
-            height = height,
-            diameter = diameter,
             price = price,
+            parameters = parameters,
             categories = categories,
             tags = tags,
             flowers = flowers,

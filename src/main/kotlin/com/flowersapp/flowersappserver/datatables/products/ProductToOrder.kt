@@ -23,6 +23,8 @@ data class ProductToOrder(
 
     var amount: Int = 1,
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id", referencedColumnName = "id")
     var productParameter: ProductParameter? = null
 )
 
