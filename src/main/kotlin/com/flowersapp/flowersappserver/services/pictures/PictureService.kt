@@ -1,9 +1,13 @@
 package com.flowersapp.flowersappserver.services.pictures
 
+import com.flowersapp.flowersappserver.datatables.orders.OrderRepository
+import com.flowersapp.flowersappserver.datatables.orders.OrderToPicture
+import com.flowersapp.flowersappserver.datatables.orders.OrderToPictureRepository
 import com.flowersapp.flowersappserver.datatables.products.ProductToPictureRepository
 import com.flowersapp.flowersappserver.datatables.products.ProductRepository
 import com.flowersapp.flowersappserver.datatables.products.ProductToPicture
-import com.flowersapp.flowersappserver.forms.products.UploadPictureForm
+import com.flowersapp.flowersappserver.forms.products.UploadOrderPictureForm
+import com.flowersapp.flowersappserver.forms.products.UploadProductPictureForm
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,12 +30,17 @@ class PictureService {
     @Autowired
     private lateinit var productToPictureRepository: ProductToPictureRepository
 
+    @Autowired
+    private lateinit var orderRepository: OrderRepository
+    @Autowired
+    private lateinit var orderToPictureRepository: OrderToPictureRepository
+
     private final var rootLocation: Path = Paths.get("picstorage")
 
     private var isInited = false
 
     @Transactional
-    fun createFrom(form: UploadPictureForm): String? {
+    fun createForProductFrom(form: UploadProductPictureForm): String? {
         if (!productRepository.existsById(form.productId)) {
             return "Product with id ${form.productId} doesn't exist"
         }
@@ -45,13 +54,38 @@ class PictureService {
         return null
     }
 
-    fun canGetPictures(productId: Long): Boolean {
+    fun canGetProductPictures(productId: Long): Boolean {
         return productToPictureRepository.existsByProductId(productId)
     }
 
     @Transactional
-    fun getOnePicture(productId: Long): Resource {
+    fun getOneProductPicture(productId: Long): Resource {
         val pictureName = productToPictureRepository.findByProductId(productId)[0].filename
+        return load(pictureName)
+    }
+
+    @Transactional
+    fun createForOrderFrom(form: UploadOrderPictureForm): String? {
+        if (!orderRepository.existsById(form.orderId)) {
+            return "Order with id ${form.orderId} doesn't exist"
+        }
+
+        store(form.uploadFile)
+        orderToPictureRepository.save(OrderToPicture(
+            order = orderRepository.findById(form.orderId).get(),
+            filename = form.uploadFile.originalFilename!!
+        ))
+
+        return null
+    }
+
+    fun canGetOrderPictures(orderId: Long): Boolean {
+        return orderToPictureRepository.existsByOrderId(orderId)
+    }
+
+    @Transactional
+    fun getOneOrderPicture(orderId: Long): Resource {
+        val pictureName = orderToPictureRepository.findByOrderId(orderId)[0].filename
         return load(pictureName)
     }
 

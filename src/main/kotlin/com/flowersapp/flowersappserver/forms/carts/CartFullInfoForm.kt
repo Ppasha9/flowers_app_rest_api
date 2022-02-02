@@ -1,5 +1,7 @@
 package com.flowersapp.flowersappserver.forms.carts
 
+import java.time.OffsetDateTime
+
 data class CartFullInfoForm(
     var price: Double,
     var status: String,
@@ -12,5 +14,6 @@ data class CartFullInfoForm(
     var receiverApartmentNum: String,
     var deliveryComment: String,
     var deliveryMethod: String,
-    var paymentMethod: String
+    var paymentMethod: String,
+    var deliveryDate: OffsetDateTime?
 )

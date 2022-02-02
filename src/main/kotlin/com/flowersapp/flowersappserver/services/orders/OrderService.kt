@@ -1,24 +1,24 @@
 package com.flowersapp.flowersappserver.services.orders
 
 import com.flowersapp.flowersappserver.constants.Constants
+import com.flowersapp.flowersappserver.controllers.ProductController
 import com.flowersapp.flowersappserver.datatables.carts.CartFormationInfoRepository
 import com.flowersapp.flowersappserver.datatables.carts.DeliveryMethod
 import com.flowersapp.flowersappserver.datatables.carts.PaymentMethod
-import com.flowersapp.flowersappserver.datatables.orders.Order
-import com.flowersapp.flowersappserver.datatables.orders.OrderRepository
-import com.flowersapp.flowersappserver.datatables.orders.OrderStatus
-import com.flowersapp.flowersappserver.datatables.orders.OrderStatusRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductToCartRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductToOrder
-import com.flowersapp.flowersappserver.datatables.products.ProductToOrderRepository
+import com.flowersapp.flowersappserver.datatables.orders.*
+import com.flowersapp.flowersappserver.datatables.products.*
 import com.flowersapp.flowersappserver.datatables.users.User
+import com.flowersapp.flowersappserver.forms.carts.ProductParameterForm
 import com.flowersapp.flowersappserver.forms.orders.*
+import com.flowersapp.flowersappserver.forms.products.UploadOrderPictureForm
+import com.flowersapp.flowersappserver.forms.products.UploadProductPictureForm
 import com.flowersapp.flowersappserver.services.carts.CartService
+import com.flowersapp.flowersappserver.services.pictures.PictureService
 import com.flowersapp.flowersappserver.services.products.ProductService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder
 
 @Service
 class OrderService {
@@ -30,6 +30,15 @@ class OrderService {
     private lateinit var productToOrderRepository: ProductToOrderRepository
     @Autowired
     private lateinit var productRepository: ProductRepository
+    @Autowired
+    private lateinit var orderToPictureRepository: OrderToPictureRepository
+
+    @Autowired
+    private lateinit var orderCardRepository: OrderCardRepository
+    @Autowired
+    private lateinit var orderColumnRepository: OrderColumnRepository
+    @Autowired
+    private lateinit var orderCardToOrderColumnRepository: OrderCardToOrderColumnRepository
 
     @Autowired
     private lateinit var cartService: CartService
@@ -37,12 +46,24 @@ class OrderService {
     private lateinit var cartFormationInfoRepository: CartFormationInfoRepository
     @Autowired
     private lateinit var productToCartRepository: ProductToCartRepository
+    @Autowired
+    private lateinit var productParametersForProductInCartRepository: ProductParametersForProductInCartRepository
+    @Autowired
+    private lateinit var productParametersForProductInOrderRepository: ProductParametersForProductInOrderRepository
+
+    @Autowired
+    private lateinit var pictureService: PictureService
+
+    @Transactional
+    fun getAll(): List<Order> {
+        return orderRepository.findAll()
+    }
 
     @Transactional
     fun createOrderFromCart(user: User) {
         val cart = cartService.getCartForUser(user)
         val cartFormationInfo = cartFormationInfoRepository.findByCartId(cart.id!!)!!
-        val order = Order(
+        var order = Order(
             userCode = user.code,
             price = cart.price,
             status = orderStatusRepository.findByCode(Constants.ORDER_STATUS_FORMING)!!,
@@ -55,20 +76,103 @@ class OrderService {
             receiverEmail = cartFormationInfo.receiverEmail,
             receiverApartmentNum = cartFormationInfo.receiverApartmentNum,
             receiverName = cartFormationInfo.receiverName,
-            receiverSurname = cartFormationInfo.receiverSurname
+            receiverSurname = cartFormationInfo.receiverSurname,
+            deliveryDate = cartFormationInfo.deliveryDate
         )
+        order = orderRepository.saveAndFlush(order)
 
-        orderRepository.saveAndFlush(order)
+        val orderCard = orderCardRepository.saveAndFlush(OrderCard(
+            order = order
+        ))
+        val orderColumnName = "${order.deliveryDate!!.dayOfMonth}.${order.deliveryDate!!.monthValue}.${order.deliveryDate!!.year}"
+        if (!orderColumnRepository.existsByName(orderColumnName)) {
+            val orderColumn = orderColumnRepository.saveAndFlush(OrderColumn(name = orderColumnName))
+            orderCardToOrderColumnRepository.saveAndFlush(OrderCardToOrderColumn(
+                orderCard = orderCard,
+                orderColumn = orderColumn
+            ))
+        }
 
         productToCartRepository.findByCartId(cart.id!!).forEach {
-            val prToOrder = ProductToOrder(
+            var prToOrder = ProductToOrder(
                 product = it.product,
                 order = order,
                 amount = it.amount
             )
-            productToOrderRepository.saveAndFlush(prToOrder)
+            prToOrder = productToOrderRepository.saveAndFlush(prToOrder)
+
+            productParametersForProductInCartRepository.findByProductToCartId(it.id!!).forEach { paramsInCart ->
+                productParametersForProductInOrderRepository.saveAndFlush(
+                    ProductParametersForProductInOrder(
+                        productToOrder = prToOrder,
+                        parameterName = paramsInCart.parameterName,
+                        parameterValue = paramsInCart.parameterValue,
+                        parameterPrice = paramsInCart.parameterPrice
+                    )
+                )
+
+                productParametersForProductInCartRepository.delete(paramsInCart)
+            }
+
             productToCartRepository.delete(it)
         }
+    }
+
+    @Transactional
+    fun createOrderFromAdminForm(form: OrderCreateAdminForm): String? {
+        if (!orderColumnRepository.existsByName(form.columnName)) {
+            orderColumnRepository.saveAndFlush(OrderColumn(name = form.columnName))
+        }
+
+        var order = Order(
+            price = form.price,
+            status = orderStatusRepository.findByCode(Constants.ORDER_STATUS_FORMING)!!,
+            paymentMethod = PaymentMethod.fromString(form.paymentMethod),
+            deliveryMethod = DeliveryMethod.fromString(form.deliveryMethod),
+            deliveryComment = form.deliveryComment,
+            receiverStreet = form.receiverStreet,
+            receiverPhone = form.receiverPhone,
+            receiverHouseNum = form.receiverHouseNum,
+            receiverEmail = form.receiverEmail,
+            receiverApartmentNum = form.receiverApartmentNum,
+            receiverName = form.receiverName,
+            receiverSurname = form.receiverSurname,
+            shortDescription = form.shortDescription,
+            productsDescription = form.productsDescription,
+            deliveryDate = form.deliveryDate
+        )
+
+        order = orderRepository.saveAndFlush(order)
+        val orderCard = orderCardRepository.saveAndFlush(OrderCard(order = order))
+        orderCardToOrderColumnRepository.saveAndFlush(
+            OrderCardToOrderColumn(
+                orderCard = orderCard,
+                orderColumn = orderColumnRepository.findByName(form.columnName)!!
+            )
+        )
+
+        form.selectedProductsDescrs.forEach {
+            if (!productRepository.existsById(it.id)) {
+                return "There isn't product with id ${it.id}"
+            }
+
+            val productToOrder = productToOrderRepository.saveAndFlush(ProductToOrder(
+                order = order,
+                product = productRepository.findById(it.id).get()
+            ))
+            it.parameters.forEach { selectedParam ->
+                productParametersForProductInOrderRepository.save(
+                    ProductParametersForProductInOrder(
+                        parameterName = selectedParam.name,
+                        parameterValue = selectedParam.value,
+                        parameterPrice = selectedParam.price,
+                        productToOrder = productToOrder
+                    )
+                )
+            }
+        }
+
+        return null
     }
 
     @Transactional
@@ -85,12 +189,23 @@ class OrderService {
             )
 
             productToOrderRepository.findByOrderId(order.id!!).forEach {
-                ocf.products.add(ProductInOrderForm(
+                val toAdd = ProductInOrderForm(
                     id = it.product.id!!,
                     name = it.product.name,
                     price = it.product.price,
-                    amount = it.amount
-                ))
+                    amount = it.amount,
+                    parameters = arrayListOf()
+                )
+
+                productParametersForProductInOrderRepository.findByProductToOrderId(it.id!!).forEach { param ->
+                    toAdd.parameters.add(ProductParameterForm(
+                        parameterPrice = param.parameterPrice,
+                        parameterValue = param.parameterValue,
+                        parameterName = param.parameterName
+                    ))
+                }
+
+                ocf.products.add(toAdd)
             }
 
             res.orders.add(ocf)
@@ -117,13 +232,61 @@ class OrderService {
             deliveryMethod = order.deliveryMethod.name,
             deliveryComment = order.deliveryComment,
             paymentMethod = order.paymentMethod.name,
+            shortDescription = order.shortDescription,
+            productsDescription = order.productsDescription,
+            deliveryDate = order.deliveryDate,
             products = arrayListOf()
         )
 
         productToOrderRepository.findByOrderId(order.id!!).forEach {
-            res.products.add(ProductInOrderCuttedForm(id = it.product.id!!, amount = it.amount))
+            val toAdd = ProductInOrderCuttedForm(
+                id = it.product.id!!,
+                amount = it.amount,
+                name = it.product.name,
+                parameters = arrayListOf()
+            )
+
+            productParametersForProductInOrderRepository.findByProductToOrderId(it.id!!).forEach { param ->
+                toAdd.parameters.add(ProductParameterForm(
+                    parameterPrice = param.parameterPrice,
+                    parameterValue = param.parameterValue,
+                    parameterName = param.parameterName
+                ))
+            }
+
+            res.products.add(toAdd)
         }
 
+        return res
+    }
+
+    @Transactional
+    fun getOrderFullAdminForm(orderId: Long): OrderFullAdminForm {
+        val res = OrderFullAdminForm(
+            id = orderId,
+            body = getOrderFullInfo(orderId),
+            picFilename = "",
+            picUrl = ""
+        )
+
+        if (!pictureService.canGetOrderPictures(orderId)) {
+            return res
+        }
+
+        val loadFiles = pictureService.loadFiles()
+        loadFiles.forEach {
+            if (orderToPictureRepository.existsByOrderIdAndFilename(
+                    orderId = orderId,
+                    filename = it.fileName.toString()
+                )) {
+                res.picFilename = it.fileName.toString()
+                res.picUrl = MvcUriComponentsBuilder.fromMethodName(
+                    ProductController::class.java,
+                    "downloadFile",
+                    it.fileName.toString()
+                ).build().toString()
+            }
+        }
         return res
     }
 
@@ -150,5 +313,39 @@ class OrderService {
         )
         orderRepository.saveAndFlush(order)
         return null
+    }
+
+    @Transactional
+    fun createOrderColumn(columnName: String): String? {
+        if (orderColumnRepository.existsByName(columnName)) {
+            return "Order column with name $columnName already exists"
+        }
+
+        val orderColumn = OrderColumn(name = columnName)
+        orderColumnRepository.saveAndFlush(orderColumn)
+        return null
+    }
+
+    @Transactional
+    fun getAllCardsWithColumns(): OrderCardsWithColumnsForm {
+        val orderCards = orderCardRepository.findAll()
+        val orderColumns = orderColumnRepository.findAll()
+
+        val res = OrderCardsWithColumnsForm(
+            cards = arrayListOf(),
+            columns = orderColumns.map { column -> column.name } as ArrayList<String>
+        )
+
+        orderCards.forEach {
+            val columnName = orderCardToOrderColumnRepository.findByOrderCardId(it.id!!)!!.orderColumn.name
+            res.cards.add(
+                OrderCardForm(
+                    order = getOrderFullAdminForm(it.order.id!!),
+                    columnName = columnName
+                )
+            )
+        }
+
+        return res
     }
 }

@@ -151,8 +151,8 @@ class ProductController {
             return ResponseEntity("Only admin can patch products", HttpStatus.FORBIDDEN)
         }
 
-        val form = UploadPictureForm(productId = productId, uploadFile = uploadFile)
-        val err = pictureService.createFrom(form)
+        val form = UploadProductPictureForm(productId = productId, uploadFile = uploadFile)
+        val err = pictureService.createForProductFrom(form)
         return if (err == null) ResponseEntity.ok("Picture was successfully uploaded")
             else ResponseEntity(err, HttpStatus.BAD_REQUEST)
     }
@@ -161,11 +161,11 @@ class ProductController {
     fun retrieveProductPicture(@PathVariable("id", required = true) productId: Long): ResponseEntity<Any> {
         logger.debug("Retrieving picture for product with id $productId")
 
-        if (!pictureService.canGetPictures(productId)) {
+        if (!pictureService.canGetProductPictures(productId)) {
             return ResponseEntity("Product with id $productId doesn't have pictures", HttpStatus.NOT_FOUND)
         }
 
-        val pictureResource = pictureService.getOnePicture(productId)
+        val pictureResource = pictureService.getOneProductPicture(productId)
         return ResponseEntity.ok()
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${pictureResource.filename}\"")
             .body(pictureResource)
@@ -183,7 +183,7 @@ class ProductController {
     fun retrieveProductAllPictures(@PathVariable("id", required = true) productId: Long): ResponseEntity<Any> {
         logger.debug("Retrieving all pictures for product with id $productId")
 
-        if (!pictureService.canGetPictures(productId)) {
+        if (!pictureService.canGetProductPictures(productId)) {
             return ResponseEntity("Product with id $productId doesn't have pictures", HttpStatus.NOT_FOUND)
         }
 

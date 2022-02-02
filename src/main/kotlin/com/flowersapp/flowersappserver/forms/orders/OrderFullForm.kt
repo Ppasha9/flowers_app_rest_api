@@ -1,8 +1,13 @@
 package com.flowersapp.flowersappserver.forms.orders
 
+import com.flowersapp.flowersappserver.forms.carts.ProductParameterForm
+import java.time.OffsetDateTime
+
 data class ProductInOrderCuttedForm(
     val id: Long,
-    val amount: Int
+    val name: String,
+    val amount: Int,
+    val parameters: ArrayList<ProductParameterForm>
 )
 
 data class OrderFullForm(
@@ -20,5 +25,8 @@ data class OrderFullForm(
     val deliveryComment: String,
     val deliveryMethod: String,
     val paymentMethod: String,
-    val products: ArrayList<ProductInOrderCuttedForm>
+    val products: ArrayList<ProductInOrderCuttedForm>,
+    var shortDescription: String,
+    var productsDescription: String,
+    var deliveryDate: OffsetDateTime?
 )

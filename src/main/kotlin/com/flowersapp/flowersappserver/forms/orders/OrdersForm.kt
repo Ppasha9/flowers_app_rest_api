@@ -1,12 +1,13 @@
 package com.flowersapp.flowersappserver.forms.orders
 
-import com.flowersapp.flowersappserver.datatables.carts.DeliveryMethod
+import com.flowersapp.flowersappserver.forms.carts.ProductParameterForm
 
 data class ProductInOrderForm(
     val id: Long,
     val name: String,
     val price: Double,
-    val amount: Int
+    val amount: Int,
+    val parameters: ArrayList<ProductParameterForm>
 )
 
 data class OrderCuttedForm(

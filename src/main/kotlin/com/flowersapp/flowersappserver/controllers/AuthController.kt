@@ -3,10 +3,14 @@ package com.flowersapp.flowersappserver.controllers
 import com.flowersapp.flowersappserver.authorization.JwtProvider
 import com.flowersapp.flowersappserver.authorization.JwtResponse
 import com.flowersapp.flowersappserver.constants.Constants
+import com.flowersapp.flowersappserver.datatables.users.User
 import com.flowersapp.flowersappserver.datatables.users.UserTypeRepository
+import com.flowersapp.flowersappserver.forms.authorization.GoogleSignInForm
 import com.flowersapp.flowersappserver.forms.authorization.LoginUserForm
 import com.flowersapp.flowersappserver.forms.authorization.SignUpUserForm
 import com.flowersapp.flowersappserver.services.users.UserService
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier
+import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.jackson2.JacksonFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -21,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.web.bind.annotation.*
+import java.util.*
 import javax.validation.Valid
 
 @CrossOrigin(origins = ["*"], maxAge = 3600)
@@ -148,21 +153,22 @@ class AuthController {
         return ResponseEntity.ok(userService.getMeForm(currUser))
     }
 
-    /*
     @RequestMapping("/google_sign_in", method = [RequestMethod.POST, RequestMethod.GET])
     fun googleSignIn(
-        @RequestParam(name = "idTokenString", required = false, defaultValue = "") inputIdTokenString: String?,
+        @RequestParam(name = "idTokenString", required = false) inputIdTokenString: String?,
         @Valid @RequestBody googleSignInRequest: GoogleSignInForm?
     ): ResponseEntity<Any> {
         val tokenVerifier = GoogleIdTokenVerifier.Builder(NetHttpTransport(), jacksonFactory)
             // Specify the CLIENT_ID of the app that accesses the google api backend:
-            .setAudience(Arrays.asList(
-                "977771799310-42c14i973bbuo8nnquld6houe6mfa2t1.apps.googleusercontent.com",
-                "102877002641-nfsv93c1i68gepqhv2a4pd5ifjsinaij.apps.googleusercontent.com"))
+            .setAudience(Collections.singletonList("112191486341-ihqa962ajv7b7bdp7au2vvs4vl8aptt3.apps.googleusercontent.com"))
             .build()
 
+        logger.debug("[Google Sign In.] Request param. inputIdTokenString=$inputIdTokenString")
+        logger.debug("[Google Sign In.] Request body. googleSignInRequest.idTokenString=${googleSignInRequest?.idTokenString}")
+
         val idTokenString = inputIdTokenString ?: googleSignInRequest?.idTokenString ?:
-        return ResponseEntity("No idTokenString in input request", HttpStatus.BAD_REQUEST)
+            return ResponseEntity("No idTokenString in input request", HttpStatus.BAD_REQUEST)
+        logger.debug("Google Sign In. idTokenString=$idTokenString")
         val idToken = tokenVerifier.verify(idTokenString) ?: return ResponseEntity("Invalid idTokenString", HttpStatus.BAD_REQUEST)
 
         val payload = idToken.payload
@@ -172,26 +178,22 @@ class AuthController {
         val password = userService.generateRandPassword()
         val encodedPassword = passwordEncoder.encode(password)
 
-        var user = userService.findByExternalCode(userExternalCode) ?: userService.findByLoginOrEmail(payload.email)
+        var user = userService.findByExternalCode(userExternalCode) ?: userService.findByEmail(payload.email)
         if (user == null) {
-            val login = payload.email.replace("@gmail.com", "")
             val name = payload["given_name"] as String
             val familyName = payload["family_name"] as String
-            val fullName = if (familyName.isNotBlank()) "$familyName $name" else name
 
-            logger.debug("Goolge Sign In. Create new user: $login $name $familyName $fullName")
+            logger.debug("Goolge Sign In. Create new user: $name $familyName")
 
             user = User(
                 code = "",
                 userType = userTypeRepository.findByCode(Constants.DEFAULT_USER_TYPE_CODE)!!,
-                login = login,
                 email = payload.email,
                 name = name,
-                fullName = fullName,
-                locale = "eng",
+                surname = familyName,
                 password = encodedPassword,
-                isOauth = true,
-                externalCode = userExternalCode
+                externalCode = userExternalCode,
+                isOAuth = true
             )
 
             userService.save(user)
@@ -201,22 +203,21 @@ class AuthController {
             userService.save(user)
         }
 
-        logger.debug("Google Sign In. New user login: ${user.login}")
+        logger.debug("Google Sign In. New user login: ${user.name}")
 
         return try {
             val authentication = authenticationManager.authenticate(
-                UsernamePasswordAuthenticationToken(user.login, password)
+                UsernamePasswordAuthenticationToken(user.email, password)
             )
 
             SecurityContextHolder.getContext().authentication = authentication
             val jwt = jwtProvider.generateJwtToken((authentication.principal as UserDetails).username)
-            ResponseEntity.ok(JwtResponse(jwt, user))
+            ResponseEntity(JwtResponse(jwt, user), HttpStatus.OK)
         } catch (e: Exception) {
             e.printStackTrace()
             ResponseEntity(e.toString(), HttpStatus.BAD_REQUEST)
         }
     }
-    */
 
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(AuthController::class.java)

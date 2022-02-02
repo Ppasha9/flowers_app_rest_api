@@ -71,6 +71,7 @@ class WebSecurityConfigurer : WebSecurityConfigurerAdapter() {
                 .antMatchers("/api/auth/signup").not().fullyAuthenticated()
                 // you can sign in as any user only if you are not logged in
                 .antMatchers("/api/auth/signin").not().fullyAuthenticated()
+                .antMatchers("/api/auth/google_sign_in").not().fullyAuthenticated()
                 .antMatchers("/", "/error", "/webjars/**", "/user", "/login/oauth2/code/google", "/login").permitAll()
                 .antMatchers("/api/product/**").permitAll()
                 .antMatchers("/api/category/**").permitAll()

@@ -5,6 +5,33 @@ import org.springframework.data.jpa.repository.JpaRepository
 import javax.persistence.*
 
 @Entity
+@Table(name = "products_parameters_for_products_in_orders")
+data class ProductParametersForProductInOrder(
+    @Id
+    @Column(unique = true)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "products_parameters_for_products_in_orders_gen")
+    @SequenceGenerator(name = "products_parameters_for_products_in_orders_gen", sequenceName = "products_parameters_for_products_in_orders_seq")
+    var id: Long? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_to_order_id")
+    var productToOrder: ProductToOrder,
+
+    @Column(name = "parameter_name")
+    var parameterName: String? = null,
+    @Column(name = "parameter_value")
+    var parameterValue: String? = null,
+    @Column(name = "parameter_price")
+    var parameterPrice: Double? = null
+)
+
+interface ProductParametersForProductInOrderRepository: JpaRepository<ProductParametersForProductInOrder, Long> {
+    fun existsByProductToOrderId(productToOrderId: Long): Boolean
+
+    fun findByProductToOrderId(productToOrderId: Long): List<ProductParametersForProductInOrder>
+}
+
+@Entity
 @Table(name = "products_to_orders")
 data class ProductToOrder(
     @Id
@@ -21,11 +48,7 @@ data class ProductToOrder(
     @JoinColumn(name = "product_code")
     var product: Product,
 
-    var amount: Int = 1,
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "id")
-    var productParameter: ProductParameter? = null
+    var amount: Int = 1
 )
 
 interface ProductToOrderRepository: JpaRepository<ProductToOrder, Long> {

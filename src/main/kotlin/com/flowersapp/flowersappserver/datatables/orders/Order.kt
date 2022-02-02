@@ -3,6 +3,7 @@ package com.flowersapp.flowersappserver.datatables.orders
 import com.flowersapp.flowersappserver.datatables.carts.DeliveryMethod
 import com.flowersapp.flowersappserver.datatables.carts.PaymentMethod
 import org.springframework.data.jpa.repository.JpaRepository
+import java.time.OffsetDateTime
 import javax.persistence.*
 
 @Entity
@@ -53,11 +54,21 @@ data class Order(
 
     @Column(name = "payment_method")
     @Enumerated(EnumType.STRING)
-    var paymentMethod: PaymentMethod = PaymentMethod.CASH
+    var paymentMethod: PaymentMethod = PaymentMethod.CASH,
+
+    @Column(name = "short_description", columnDefinition = "TEXT")
+    var shortDescription: String = "",
+
+    @Column(name = "products_description", columnDefinition = "TEXT")
+    var productsDescription: String = "",
+
+    @Column(name = "delivery_date")
+    var deliveryDate: OffsetDateTime? = null
 )
 
 interface OrderRepository: JpaRepository<Order, Long> {
     fun existsByUserCode(userCode: String): Boolean
 
     fun findByUserCode(userCode: String): List<Order>
+    fun findTopByOrderByIdDesc(): Order?
 }

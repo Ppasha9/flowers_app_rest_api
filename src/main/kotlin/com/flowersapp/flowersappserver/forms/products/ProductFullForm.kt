@@ -1,6 +1,5 @@
 package com.flowersapp.flowersappserver.forms.products
 
-import com.flowersapp.flowersappserver.datatables.products.ProductParameter
 import java.time.OffsetDateTime
 
 data class ProductFullForm(
@@ -10,7 +9,7 @@ data class ProductFullForm(
     var price: Double,
     var productFavouriteForUser: Boolean,
     var addDate: OffsetDateTime,
-    var parameters: ArrayList<ProductParameter>,
+    var parameters: ArrayList<ProductParameterForm>,
     var categories: ArrayList<String>,
     var tags: ArrayList<String>,
     var flowers: ArrayList<String>

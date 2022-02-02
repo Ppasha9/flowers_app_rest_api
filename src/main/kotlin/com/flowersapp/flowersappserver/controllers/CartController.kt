@@ -1,6 +1,8 @@
 package com.flowersapp.flowersappserver.controllers
 
 import com.flowersapp.flowersappserver.constants.Constants
+import com.flowersapp.flowersappserver.forms.carts.AddProductToCartForm
+import com.flowersapp.flowersappserver.forms.carts.RemoveProductFromCartForm
 import com.flowersapp.flowersappserver.forms.carts.UpdateCartFormationInfoForm
 import com.flowersapp.flowersappserver.services.carts.CartService
 import com.flowersapp.flowersappserver.services.orders.OrderService
@@ -31,14 +33,16 @@ class CartController {
     @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
     @PostMapping("/add-product")
     fun addProductToCart(
-        @RequestParam(name = "productId", required = true) productId: Long,
-        @RequestParam(name = "parameterName", required = false) parameterName: String?,
-        @RequestParam(name = "parameterValue", required = false) parameterValue: String?
+        @Valid @RequestBody(required = true) form: AddProductToCartForm?
     ): ResponseEntity<Any> {
-        logger.debug("Adding product with id=$productId to cart")
+        if (form == null) {
+            return ResponseEntity("Invalid body", HttpStatus.BAD_REQUEST);
+        }
 
-        if (!productService.existsById(productId)) {
-            return ResponseEntity("Not found product with id=$productId", HttpStatus.BAD_REQUEST)
+        logger.debug("Adding product with id=${form.productId} to cart")
+
+        if (!productService.existsById(form.productId)) {
+            return ResponseEntity("Not found product with id=${form.productId}", HttpStatus.BAD_REQUEST)
         }
 
         val currUser = userService.getCurrentAuthorizedUser()
@@ -46,9 +50,8 @@ class CartController {
 
         cartService.addProductToCart(
             user = currUser,
-            product = productService.findById(productId).get(),
-            parameterName = parameterName ?: "",
-            parameterValue = parameterValue ?: ""
+            product = productService.findById(form.productId).get(),
+            parameters = form.parameters ?: arrayListOf()
         )
         return ResponseEntity.ok("Product was successfully added")
     }
@@ -56,19 +59,26 @@ class CartController {
     @PreAuthorize(Constants.ANY_AUTHORIZED_AUTHORITY)
     @PostMapping("/remove-product")
     fun removeProduct(
-        @RequestParam(name = "productId", required = true) productId: Long,
-        @RequestParam(name = "permanently", required = false) permanently: Boolean?
+        @Valid @RequestBody(required = true) form: RemoveProductFromCartForm?
     ): ResponseEntity<Any> {
-        logger.debug("Removing product with id=$productId to cart, permanently=$permanently")
+        if (form == null) {
+            return ResponseEntity("Invalid body", HttpStatus.BAD_REQUEST);
+        }
 
-        if (!productService.existsById(productId)) {
-            return ResponseEntity("Not found product with id=$productId", HttpStatus.BAD_REQUEST)
+        logger.debug("Removing product with id=${form.productId} to cart, permanently=${form.permanently}")
+
+        if (!productService.existsById(form.productId)) {
+            return ResponseEntity("Not found product with id=${form.productId}", HttpStatus.BAD_REQUEST)
         }
 
         val currUser = userService.getCurrentAuthorizedUser()
             ?: return ResponseEntity("Invalid authority", HttpStatus.FORBIDDEN)
 
-        cartService.removeProductFromCart(currUser, productService.findById(productId).get(), permanently)
+        cartService.removeProductFromCart(
+            user = currUser,
+            product = productService.findById(form.productId).get(),
+            parameters = form.parameters ?: arrayListOf(),
+            permanently = form.permanently)
         return ResponseEntity.ok("Product was successfully removed")
     }
 

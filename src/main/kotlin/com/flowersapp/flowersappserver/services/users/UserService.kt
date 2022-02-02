@@ -38,6 +38,9 @@ class UserService {
     fun findByEmail(email: String): User? = userRepository.findByEmail(email)
 
     @Transactional
+    fun findByExternalCode(externalCode: String): User? = userRepository.findByExternalCode(externalCode)
+
+    @Transactional
     fun findByEmailOrPhone(emailOrPhone: String): User? = userRepository.findByEmail(emailOrPhone) ?: userRepository.findByPhone(emailOrPhone)
 
     @Transactional

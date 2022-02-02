@@ -11,8 +11,6 @@ import com.flowersapp.flowersappserver.services.users.UserService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder
@@ -24,6 +22,8 @@ import kotlin.collections.ArrayList
 class ProductService {
     @Autowired
     private lateinit var productRepository: ProductRepository
+    @Autowired
+    private lateinit var productParameterRepository: ProductParameterRepository
     @Autowired
     private lateinit var pictureService: PictureService
     @Autowired
@@ -73,7 +73,14 @@ class ProductService {
             flowers = flowers
         )
 
-        val productsDistinct = products.distinctBy { product -> product.id!! }
+        val productsDistinctIds = arrayListOf<Long>()
+        val productsDistinct = arrayListOf<Product>()
+        products.forEach {
+            if (!productsDistinctIds.contains(it.id!!)) {
+                productsDistinct.add(it)
+                productsDistinctIds.add(it.id!!)
+            }
+        }
 
         if (range != null) {
             val newProducts = arrayListOf<Product>()
@@ -149,11 +156,19 @@ class ProductService {
             price = product.price,
             productFavouriteForUser = isProductFavouriteForCurrentUser(product.id!!),
             addDate = date,
-            parameters = product.parameters as ArrayList<ProductParameter>,
+            parameters = arrayListOf(),
             categories = arrayListOf(),
             tags = arrayListOf(),
             flowers = arrayListOf()
         )
+
+        productParameterRepository.findByProductId(productId = product.id!!).forEach {
+            res.parameters.add(ProductParameterForm(
+                name = it.name,
+                value = it.value,
+                price = it.price
+            ))
+        }
 
         productToCategoryRepository.findByProductId(productId = product.id!!).forEach {
             res.categories.add(it.category.code)
@@ -188,7 +203,7 @@ class ProductService {
             picUrl = ""
         )
 
-        if (!pictureService.canGetPictures(fullForm.id)) {
+        if (!pictureService.canGetProductPictures(fullForm.id)) {
             return res
         }
 
@@ -219,10 +234,18 @@ class ProductService {
             name = productForm.name,
             content = productForm.content,
             price = productForm.price,
-            parameters = productForm.parameters ?: arrayListOf(),
             addDate = OffsetDateTime.now()
         )
         productRepository.saveAndFlush(product)
+
+        productForm.parameters?.forEach {
+            productParameterRepository.save(ProductParameter(
+                name = it.name,
+                value = it.value,
+                price = it.price,
+                product = product
+            ))
+        }
 
         productForm.categories?.forEach {
             if (!categoryRepository.existsByCode(it)) {
@@ -266,7 +289,6 @@ class ProductService {
             name = productForm.name,
             content = productForm.content,
             price = productForm.price,
-            parameters = productForm.parameters,
             categories = productForm.categories,
             tags = productForm.tags,
             flowers = productForm.flowers
@@ -276,15 +298,29 @@ class ProductService {
             return err
         }
 
-        val picUploadForm = UploadPictureForm(
+        val picUploadForm = UploadProductPictureForm(
             productId = productRepository.findByName(productForm.name)!!.id!!,
             uploadFile = productForm.picture!!
         )
-        val picErr = pictureService.createFrom(picUploadForm)
+        val picErr = pictureService.createForProductFrom(picUploadForm)
         if (picErr != null) {
             return picErr
         }
 
+        return null
+    }
+
+    @Transactional
+    fun addParametersToProduct(form: ProductAddParametersAdminForm): String? {
+        val pr = productRepository.findById(form.id).get()
+        form.parameters.forEach {
+            productParameterRepository.save(ProductParameter(
+                name = it.name,
+                value = it.value,
+                price = it.price,
+                product = pr
+            ))
+        }
         return null
     }
 
@@ -303,7 +339,6 @@ class ProductService {
         product.name = productForm.name
         product.price = productForm.price
         product.content = productForm.content
-        product.parameters = productForm.parameters ?: arrayListOf()
         productRepository.save(product)
 
         val currCategories = productToCategoryRepository.findByProductId(productId)
@@ -436,6 +471,7 @@ class ProductService {
         return null
     }
 
+    @Transactional
     fun deleteProductsForever(indices: ArrayList<Long>): String? {
         indices.forEach {
             if (!productRepository.existsById(it)) {
@@ -448,6 +484,11 @@ class ProductService {
         }
 
         return null
+    }
+
+    @Transactional
+    fun searchProductsByCategoryAndText(category: String, text: String): ArrayList<Product> {
+        return productRepository.findByCategoryAndTextNative(category, text) as ArrayList<Product>
     }
 
     companion object {

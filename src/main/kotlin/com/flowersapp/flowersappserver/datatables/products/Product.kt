@@ -14,11 +14,14 @@ data class ProductParameter(
     @Column(unique = true)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "products_parameters_gen")
     @SequenceGenerator(name = "products_parameters_gen", sequenceName = "products_parameters_seq")
-    var id: Long,
+    var id: Long? = null,
 
     var name: String,
     var value: String,
-    var price: Double
+    var price: Double,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    var product: Product
 )
 
 @Entity
@@ -40,10 +43,6 @@ data class Product(
 
     var price: Double = 0.0,
 
-    @OneToMany(cascade = [CascadeType.PERSIST], fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", referencedColumnName = "id")
-    var parameters: List<ProductParameter> = arrayListOf(),
-
     @Column(name = "add_date")
     var addDate: OffsetDateTime? = null
 )
@@ -51,6 +50,10 @@ data class Product(
 interface ProductRepository: JpaRepository<Product, Long>, CustomProductRepository {
     fun findByName(name: String): Product?
     fun existsByName(name: String): Boolean
+}
+
+interface ProductParameterRepository: JpaRepository<ProductParameter, Long> {
+    fun findByProductId(productId: Long): List<ProductParameter>
 }
 
 interface CustomProductRepository {
@@ -66,6 +69,8 @@ interface CustomProductRepository {
     ): List<Product>
 
     fun findMaxPriceByCategoryNative(category: String): Double?
+
+    fun findByCategoryAndTextNative(category: String, text: String): List<Product>
 }
 
 class CustomProductRepositoryImpl: CustomProductRepository {
@@ -88,9 +93,6 @@ class CustomProductRepositoryImpl: CustomProductRepository {
                 ${Constants.POSTGRES_SCHEME}.products.id,
                 ${Constants.POSTGRES_SCHEME}.products.name,
                 ${Constants.POSTGRES_SCHEME}.products.content,
-                ${Constants.POSTGRES_SCHEME}.products.size,
-                ${Constants.POSTGRES_SCHEME}.products.height,
-                ${Constants.POSTGRES_SCHEME}.products.diameter,
                 ${Constants.POSTGRES_SCHEME}.products.price,
                 ${Constants.POSTGRES_SCHEME}.products.add_date 
             from ${Constants.POSTGRES_SCHEME}.products
@@ -225,5 +227,33 @@ class CustomProductRepositoryImpl: CustomProductRepository {
 
         val list = entityManager.createNativeQuery(query).resultList as List<Double>
         return if (list.isEmpty()) null else list[0]
+    }
+
+    override fun findByCategoryAndTextNative(category: String, text: String): List<Product> {
+        var query = """
+            select
+                ${Constants.POSTGRES_SCHEME}.products.id,
+                ${Constants.POSTGRES_SCHEME}.products.name,
+                ${Constants.POSTGRES_SCHEME}.products.content,
+                ${Constants.POSTGRES_SCHEME}.products.price,
+                ${Constants.POSTGRES_SCHEME}.products.add_date 
+            from ${Constants.POSTGRES_SCHEME}.products
+        """
+
+        if (category.isNotBlank()) {
+            query += """
+                join ${Constants.POSTGRES_SCHEME}.products_to_categories
+                on
+                    category_code = '$category' and product_id = products.id
+            """
+        }
+
+        if (text.isNotBlank()) {
+            query += """
+            where ${Constants.POSTGRES_SCHEME}.products.name like '%$text%' 
+            """
+        }
+
+        return entityManager.createNativeQuery(query, Product::class.java).resultList as List<Product>
     }
 }

@@ -1,9 +1,10 @@
 package com.flowersapp.flowersappserver.datatables.carts
 
 import org.springframework.data.jpa.repository.JpaRepository
+import java.time.OffsetDateTime
 import javax.persistence.*
 
-public enum class DeliveryMethod {
+enum class DeliveryMethod {
     NONE,
     COURIER,
     PICKUP;
@@ -19,7 +20,7 @@ public enum class DeliveryMethod {
     }
 }
 
-public enum class PaymentMethod {
+enum class PaymentMethod {
     NONE,
     ONLINE,
     CASH;
@@ -74,6 +75,9 @@ data class CartFormationInfo(
     @Column(name = "delivery_method")
     @Enumerated(EnumType.STRING)
     var deliveryMethod: DeliveryMethod = DeliveryMethod.COURIER,
+
+    @Column(name = "delivery_date")
+    var deliveryDate: OffsetDateTime? = null,
 
     @Column(name = "payment_method")
     @Enumerated(EnumType.STRING)

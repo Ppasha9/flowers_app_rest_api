@@ -63,4 +63,5 @@ interface UserRepository : JpaRepository<User, String> {
     fun findByCode(code: String): User?
     fun findByEmail(email: String): User?
     fun findByPhone(phone: String): User?
+    fun findByExternalCode(externalCode: String): User?
 }
