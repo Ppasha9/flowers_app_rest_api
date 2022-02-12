@@ -11,3 +11,8 @@ data class UploadOrderPictureForm(
     var orderId: Long,
     var uploadFile: MultipartFile
 )
+
+data class UploadCompilationPictureForm(
+    var compilationId: Long,
+    var uploadFile: MultipartFile
+)

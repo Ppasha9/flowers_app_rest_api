@@ -85,13 +85,16 @@ class OrderService {
             order = order
         ))
         val orderColumnName = "${order.deliveryDate!!.dayOfMonth}.${order.deliveryDate!!.monthValue}.${order.deliveryDate!!.year}"
-        if (!orderColumnRepository.existsByName(orderColumnName)) {
-            val orderColumn = orderColumnRepository.saveAndFlush(OrderColumn(name = orderColumnName))
-            orderCardToOrderColumnRepository.saveAndFlush(OrderCardToOrderColumn(
-                orderCard = orderCard,
-                orderColumn = orderColumn
-            ))
+        val orderColumn = if (!orderColumnRepository.existsByName(orderColumnName)) {
+            orderColumnRepository.saveAndFlush(OrderColumn(name = orderColumnName))
+        } else {
+            orderColumnRepository.findByName(orderColumnName)
         }
+
+        orderCardToOrderColumnRepository.saveAndFlush(OrderCardToOrderColumn(
+            orderCard = orderCard,
+            orderColumn = orderColumn!!
+        ))
 
         productToCartRepository.findByCartId(cart.id!!).forEach {
             var prToOrder = ProductToOrder(
@@ -291,14 +294,22 @@ class OrderService {
     }
 
     @Transactional
-    fun createOneClickOrder(user: User?, productId: Long, oneClickForm: OrderOneClickForm): String? {
-        if (!productRepository.existsById(productId)) {
-            return "Product with id $productId doesn't exist"
+    fun createOneClickOrder(user: User?, oneClickForm: OrderOneClickForm): String? {
+        if (!productRepository.existsById(oneClickForm.productId)) {
+            return "Product with id ${oneClickForm.productId} doesn't exist"
         }
 
-        val order = Order(
+        val product = productRepository.findById(oneClickForm.productId).get()
+        var orderPrice = product.price
+        for (param in oneClickForm.parameters ?: arrayListOf()) {
+            if (param.parameterPrice != null) {
+                orderPrice += param.parameterPrice!!
+            }
+        }
+
+        var order = Order(
             userCode = user?.code,
-            price = productRepository.findById(productId).get().price,
+            price = orderPrice,
             status = orderStatusRepository.findByCode(Constants.ORDER_STATUS_FORMING)!!,
             receiverName = oneClickForm.receiverName,
             receiverSurname = oneClickForm.receiverSurname,
@@ -308,10 +319,42 @@ class OrderService {
             receiverHouseNum = oneClickForm.receiverHouseNum,
             receiverApartmentNum = oneClickForm.receiverApartmentNum,
             deliveryComment = oneClickForm.deliveryComment,
+            deliveryDate = oneClickForm.deliveryDate,
             deliveryMethod = DeliveryMethod.fromString(oneClickForm.deliveryMethod),
             paymentMethod = PaymentMethod.fromString(oneClickForm.paymentMethod)
         )
-        orderRepository.saveAndFlush(order)
+        order = orderRepository.saveAndFlush(order)
+
+        val orderCard = orderCardRepository.saveAndFlush(OrderCard(
+            order = order
+        ))
+        val orderColumnName = "${order.deliveryDate!!.dayOfMonth}.${order.deliveryDate!!.monthValue}.${order.deliveryDate!!.year}"
+        val orderColumn = if (!orderColumnRepository.existsByName(orderColumnName)) {
+             orderColumnRepository.saveAndFlush(OrderColumn(name = orderColumnName))
+        } else {
+            orderColumnRepository.findByName(orderColumnName)
+        }
+        orderCardToOrderColumnRepository.saveAndFlush(OrderCardToOrderColumn(
+            orderCard = orderCard,
+            orderColumn = orderColumn!!
+        ))
+
+        var prToOrder = ProductToOrder(
+            product = product,
+            order = order,
+            amount = 1
+        )
+        prToOrder = productToOrderRepository.saveAndFlush(prToOrder)
+        for (param in oneClickForm.parameters ?: arrayListOf()) {
+            productParametersForProductInOrderRepository.saveAndFlush(
+                ProductParametersForProductInOrder(
+                    productToOrder = prToOrder,
+                    parameterName = param.parameterName,
+                    parameterValue = param.parameterValue,
+                    parameterPrice = param.parameterPrice
+                )
+            )
+        }
         return null
     }
 

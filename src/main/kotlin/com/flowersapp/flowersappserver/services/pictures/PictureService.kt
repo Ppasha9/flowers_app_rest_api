@@ -3,9 +3,8 @@ package com.flowersapp.flowersappserver.services.pictures
 import com.flowersapp.flowersappserver.datatables.orders.OrderRepository
 import com.flowersapp.flowersappserver.datatables.orders.OrderToPicture
 import com.flowersapp.flowersappserver.datatables.orders.OrderToPictureRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductToPictureRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductRepository
-import com.flowersapp.flowersappserver.datatables.products.ProductToPicture
+import com.flowersapp.flowersappserver.datatables.products.*
+import com.flowersapp.flowersappserver.forms.products.UploadCompilationPictureForm
 import com.flowersapp.flowersappserver.forms.products.UploadOrderPictureForm
 import com.flowersapp.flowersappserver.forms.products.UploadProductPictureForm
 import org.slf4j.Logger
@@ -17,11 +16,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.FileSystemUtils
 import org.springframework.web.multipart.MultipartFile
-import java.lang.RuntimeException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.stream.Stream
+import kotlin.RuntimeException
+
+class PictureServiceException(msg: String): RuntimeException(msg)
 
 @Service
 class PictureService {
@@ -35,7 +36,12 @@ class PictureService {
     @Autowired
     private lateinit var orderToPictureRepository: OrderToPictureRepository
 
-    private final var rootLocation: Path = Paths.get("picstorage")
+    @Autowired
+    private lateinit var compilationRepository: CompilationRepository
+    @Autowired
+    private lateinit var compilationToPictureRepository: CompilationToPictureRepository
+
+    private var rootLocation: Path = Paths.get("picstorage")
 
     private var isInited = false
 
@@ -86,6 +92,30 @@ class PictureService {
     @Transactional
     fun getOneOrderPicture(orderId: Long): Resource {
         val pictureName = orderToPictureRepository.findByOrderId(orderId)[0].filename
+        return load(pictureName)
+    }
+
+    @Throws(RuntimeException::class)
+    @Transactional
+    fun createForCompilationFrom(form: UploadCompilationPictureForm) {
+        if (!compilationRepository.existsById(form.compilationId)) {
+            throw PictureServiceException("Compilation with id ${form.compilationId} doesn't exist")
+        }
+
+        store(form.uploadFile)
+        compilationToPictureRepository.saveAndFlush(CompilationToPicture(
+            compilation = compilationRepository.findById(form.compilationId).get(),
+            filename = form.uploadFile.originalFilename!!
+        ))
+    }
+
+    fun canGetCompilationPictures(compilationId: Long): Boolean {
+        return compilationToPictureRepository.existsByCompilationId(compilationId)
+    }
+
+    @Transactional
+    fun getOneCompilationPicture(compilationId: Long): Resource {
+        val pictureName = compilationToPictureRepository.findByCompilationId(compilationId)!!.filename
         return load(pictureName)
     }
 

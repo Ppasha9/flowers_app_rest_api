@@ -75,6 +75,7 @@ class WebSecurityConfigurer : WebSecurityConfigurerAdapter() {
                 .antMatchers("/", "/error", "/webjars/**", "/user", "/login/oauth2/code/google", "/login").permitAll()
                 .antMatchers("/api/product/**").permitAll()
                 .antMatchers("/api/category/**").permitAll()
+                .antMatchers("/api/compilation/**").permitAll()
                 .antMatchers("/api/tag/**").permitAll()
                 .antMatchers("/api/flower/**").permitAll()
                 .antMatchers("/api/cart/**").permitAll()

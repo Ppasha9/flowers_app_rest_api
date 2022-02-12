@@ -276,9 +276,8 @@ class ProductController {
         return ResponseEntity.ok(products.map { productService.getFullForm(it) }.toList())
     }
 
-    @PostMapping("/one-click/{id}")
+    @PostMapping("/one-click")
     fun buyByOneClick(
-        @PathVariable(name = "id", required = true) productId: Long,
         @Valid @RequestBody reqBodyForm: OrderOneClickForm?
     ): ResponseEntity<Any> {
         logger.debug("Forming one-click order")
@@ -288,7 +287,7 @@ class ProductController {
         }
 
         val currUser = userService.getCurrentAuthorizedUser()
-        val err = orderService.createOneClickOrder(currUser, productId, reqBodyForm)
+        val err = orderService.createOneClickOrder(currUser, reqBodyForm)
         return if (err == null) {
             ResponseEntity.ok("One-click order was successfully created")
         } else {

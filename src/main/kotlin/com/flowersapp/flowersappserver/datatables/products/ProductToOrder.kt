@@ -41,11 +41,11 @@ data class ProductToOrder(
     var id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_code")
+    @JoinColumn(name = "order_id")
     var order: Order,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_code")
+    @JoinColumn(name = "product_id")
     var product: Product,
 
     var amount: Int = 1
